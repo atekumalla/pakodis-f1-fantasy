@@ -10,6 +10,22 @@ from src.scoring.rules import ScoringRules, DEFAULT_RULES
 
 logger = logging.getLogger(__name__)
 
+# Map alternative names → canonical name (all lowercase)
+# Draft picks may use short names while OpenF1 API uses full legal names
+_NAME_ALIASES: dict[str, str] = {
+    "alex albon": "alexander albon",
+}
+
+
+def normalize_driver_name(name: str) -> str:
+    """Normalize a driver name for consistent matching.
+    
+    Handles case differences and known aliases (e.g. Alex → Alexander).
+    """
+    lower = name.lower()
+    return _NAME_ALIASES.get(lower, lower)
+
+
 
 class ScoringCalculator:
     """Calculates fantasy draft points for F1 session results."""
@@ -49,9 +65,9 @@ class ScoringCalculator:
         drivers = player.drivers_for_half(half)
         pts_map = self.calculate_session_points(session)
         
-        # Build case-insensitive lookup for driver name matching
-        pts_map_lower = {k.lower(): v for k, v in pts_map.items()}
-        return sum(pts_map_lower.get(d.lower(), 0.0) for d in drivers)
+        # Build normalized lookup for driver name matching
+        pts_map_norm = {normalize_driver_name(k): v for k, v in pts_map.items()}
+        return sum(pts_map_norm.get(normalize_driver_name(d), 0.0) for d in drivers)
 
     def calculate_player_total(
         self,
@@ -83,13 +99,13 @@ class ScoringCalculator:
     ) -> float:
         """Total points a specific driver earned across sessions."""
         total = 0.0
-        driver_lower = driver_name.lower()
+        driver_norm = normalize_driver_name(driver_name)
         for session in sessions:
             if half and session.half != half:
                 continue
             pts_map = self.calculate_session_points(session)
-            pts_map_lower = {k.lower(): v for k, v in pts_map.items()}
-            total += pts_map_lower.get(driver_lower, 0.0)
+            pts_map_norm = {normalize_driver_name(k): v for k, v in pts_map.items()}
+            total += pts_map_norm.get(driver_norm, 0.0)
         return round(total, 2)
 
     def calculate_driver_breakdown(
@@ -100,13 +116,13 @@ class ScoringCalculator:
     ) -> dict[str, float]:
         """Points breakdown by session type (race, qualifying, sprint)."""
         breakdown = {"race": 0.0, "qualifying": 0.0, "sprint": 0.0}
-        driver_lower = driver_name.lower()
+        driver_norm = normalize_driver_name(driver_name)
         for session in sessions:
             if half and session.half != half:
                 continue
             pts_map = self.calculate_session_points(session)
-            pts_map_lower = {k.lower(): v for k, v in pts_map.items()}
-            pts = pts_map_lower.get(driver_lower, 0.0)
+            pts_map_norm = {normalize_driver_name(k): v for k, v in pts_map.items()}
+            pts = pts_map_norm.get(driver_norm, 0.0)
             if pts > 0:
                 breakdown[session.session_type.value] = round(
                     breakdown.get(session.session_type.value, 0.0) + pts, 2

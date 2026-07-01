@@ -201,14 +201,25 @@ async def get_status():
         results_list = []
         for r in sorted(s.results, key=lambda x: x.position if x.position else 99):
             owner_map = driver_to_player_h1 if s.is_h1 else driver_to_player_h2
+            # Look up owner using normalized name for alias matching
+            from src.scoring.calculator import normalize_driver_name
+            owner = owner_map.get(r.driver_name)
+            if not owner:
+                # Try alias matching (e.g. "Alexander ALBON" → "Alex Albon")
+                r_norm = normalize_driver_name(r.driver_name)
+                for draft_name, player_name in owner_map.items():
+                    if normalize_driver_name(draft_name) == r_norm:
+                        owner = player_name
+                        break
             results_list.append({
                 "driver": r.driver_name,
+                "driver_number": r.driver_number,
                 "position": r.position,
                 "points": pts_map.get(r.driver_name, 0),
                 "dnf": r.dnf,
                 "dns": r.dns,
                 "dsq": r.dsq,
-                "owner": owner_map.get(r.driver_name),
+                "owner": owner,
             })
 
         # Get country flag for the race location

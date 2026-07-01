@@ -1287,9 +1287,13 @@ function openDriverDetailModal(driverNumber) {
     }
     const race = raceMap.get(key);
     
-    // Find driver's result in this session - match by name (handle case variations)
+    // Find driver's result in this session - match by driver number (most reliable)
+    // Falls back to name match for older data without driver_number
     const driverNameLower = driverInfo.name.toLowerCase();
-    const result = s.results?.find(r => r.driver.toLowerCase() === driverNameLower);
+    const result = s.results?.find(r => 
+      (r.driver_number && r.driver_number === driverInfo.number) ||
+      r.driver.toLowerCase() === driverNameLower
+    );
     if (result) {
       console.log('Found result for', driverInfo.name, 'in', s.grand_prix, s.session_type, '- Position:', result.position, 'Points:', result.points);
       const pos = result.position || (result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : '-')));
