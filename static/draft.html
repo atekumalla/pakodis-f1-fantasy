@@ -6,7 +6,7 @@
 <title>F1 2026 — Mid-Season Draft</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300..700&display=swap" rel="stylesheet">
 <style>
-:root,[data-theme="dark"]{--bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--divider:#21262d;--text:#e6edf3;--muted:#8b949e;--faint:#4d5566;--red:#e10600;--red-hover:#ff1e00;--green:#22c55e;--gold:#f59e0b;--blue:#3b82f6}
+:root,[data-theme="dark"]{--bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--divider:#21262d;--text:#e6edf3;--muted:#8b949e;--faint:#4d5566;--red:#e10600;--red-hover:#ff1e00;--green:#22c55e;--gold:#f59e0b;--blue:#3b82f6;--shadow-lg:0 12px 32px rgba(0,0,0,.5)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{min-height:100dvh;font-family:'Barlow',system-ui,sans-serif;color:var(--text);background:var(--bg);line-height:1.5}
 button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
@@ -14,6 +14,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .hdr{background:var(--surface);border-bottom:2px solid var(--red);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800}
 .hdr-title span{color:var(--red)}
+.hdr-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:.5rem;font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;transition:all .18s;text-decoration:none;white-space:nowrap}
 .btn-red{background:var(--red);color:#fff}.btn-red:hover:not(:disabled){background:var(--red-hover)}
 .btn-sec{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-sec:hover:not(:disabled){background:var(--divider)}
@@ -75,13 +76,13 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .toast.show{transform:translateX(-50%) translateY(0)}
 
 @media(max-width:900px){.picks-panel{grid-template-columns:repeat(2,1fr)}.driver-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
-@media(max-width:600px){.main{padding:1rem}.picks-panel{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.hdr{padding:.6rem .75rem;flex-wrap:wrap;gap:.5rem}.hdr-title{font-size:1.2rem}.hdr-actions{width:100%;justify-content:flex-end;gap:.4rem}.btn{padding:.4rem .7rem;font-size:.75rem}.main{padding:1rem;gap:1rem}.section{padding:1rem}.section-title{font-size:1.15rem}.picks-panel{grid-template-columns:1fr 1fr}.driver-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.5rem}.driver-tile{padding:.75rem}.driver-name{font-size:1rem}.current-picker{font-size:1.6rem}.completed-banner{padding:1.5rem 1rem}.completed-title{font-size:1.6rem}.modal{padding:1.25rem;width:94%}.modal-driver{font-size:1.5rem}.modal-actions{flex-wrap:wrap}}
 </style>
 </head>
 <body>
 <header class="hdr">
   <div class="hdr-title"><span>F1</span> Mid-Season Draft</div>
-  <div style="display:flex;gap:.5rem">
+  <div class="hdr-actions">
     <button class="btn btn-sec" id="btnUndo" style="display:none">↩ Undo</button>
     <button class="btn btn-sec" id="btnReset" style="display:none">🗑 Reset</button>
     <a class="btn btn-sec" href="/">← Dashboard</a>

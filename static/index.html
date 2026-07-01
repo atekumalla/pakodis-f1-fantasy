@@ -72,6 +72,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .half-tab{padding:6px 16px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s}
 .half-tab.active{background:var(--red);color:#fff}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.two-col>*{min-width:0}
 .section{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem;box-shadow:var(--shadow-sm)}
 .section-title{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem}
 table{width:100%;border-collapse:collapse}
@@ -79,7 +80,7 @@ th{font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;te
 th:nth-child(2){text-align:left}
 td{padding:.5rem;border-bottom:1px solid var(--divider);text-align:center;font-size:.875rem}
 tbody tr:hover{background:var(--surface2)}
-.chart-container{position:relative;height:280px}
+.chart-container{position:relative;height:280px;width:100%;min-width:0}
 .session-card{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:.75rem;border-left:3px solid var(--red)}
 .session-meta{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-bottom:.5rem}
 .session-badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.7rem;font-weight:700;text-transform:uppercase}
@@ -170,7 +171,7 @@ tbody tr:hover{background:var(--surface2)}
 .footer{text-align:center;padding:2rem 1rem;color:var(--faint);font-size:.75rem}
 .footer a{color:var(--red);text-decoration:none}
 @media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}
-@media(max-width:600px){.main{padding:1rem;gap:1rem}.cards{grid-template-columns:1fr}.hdr{padding:.75rem;flex-wrap:wrap;gap:.5rem}.hdr-actions{width:100%;justify-content:flex-end}.driver-row{padding:.4rem}.driver-photo{width:32px;height:32px}.modal-content{padding:1.5rem}}
+@media(max-width:600px){.main{padding:1rem;gap:1rem}.cards{grid-template-columns:1fr}.hdr{padding:.6rem .75rem;flex-wrap:wrap;gap:.5rem}.hdr-title{font-size:1.2rem}.hdr-sub{font-size:.68rem}.hdr-actions{width:100%;justify-content:center;gap:.4rem}.btn{padding:.35rem .55rem;font-size:.72rem}.leader-banner{padding:1rem 1.25rem}.driver-row{padding:.4rem}.driver-photo{width:32px;height:32px}.chart-container{height:240px}.sessions-row{grid-template-columns:1fr;gap:.75rem}.race-header{gap:.6rem}.race-flag{font-size:2rem}.race-title{font-size:1.35rem}.race-total-value{font-size:1.4rem}#pointsTable th,#pointsTable td{padding:.45rem .35rem}.modal{padding:.5rem;align-items:flex-start}.modal-content{padding:1.1rem;max-height:95vh;border-radius:.75rem}.modal-header{margin-bottom:1rem;padding-bottom:.75rem}.modal-title{font-size:1.3rem}.driver-detail-header{gap:.85rem;padding:.85rem;margin-bottom:1rem}.driver-detail-photo{width:66px;height:66px;border-width:2px}.driver-detail-name{font-size:1.25rem;gap:.5rem}.driver-detail-number{width:32px;height:32px;font-size:1rem}.driver-detail-meta{flex-direction:column;gap:.3rem;margin-top:.5rem;font-size:.85rem}.driver-results-table th,.driver-results-table td{padding:.4rem .35rem;font-size:.78rem}.hide-mobile{display:none}.standings-table th,.standings-table td{padding:.5rem .4rem;font-size:.8rem}}
 </style>
 </head>
 <body>
@@ -190,7 +191,7 @@ tbody tr:hover{background:var(--surface2)}
 </header>
 <main class="main">
   <div class="leader-banner">
-    <div><div class="leader-label">🏆 Current Leader</div><div class="leader-name" id="leaderName" style="font-size:3rem !important">Loading...</div><div class="leader-pts" id="leaderPts"></div></div>
+    <div><div class="leader-label">🏆 Current Leader</div><div class="leader-name" id="leaderName" style="font-size:clamp(2.4rem,7vw,3rem) !important">Loading...</div><div class="leader-pts" id="leaderPts"></div></div>
     <div style="font-size:2.5rem">🏆</div>
   </div>
   <div style="display:flex;justify-content:center">
@@ -402,7 +403,7 @@ tbody tr:hover{background:var(--surface2)}
       <thead>
         <tr>
           <th>Grand Prix</th>
-          <th>Date</th>
+          <th class="hide-mobile">Date</th>
           <th style="text-align:center">Quali</th>
           <th style="text-align:center">Sprint</th>
           <th style="text-align:center">Race</th>
@@ -616,79 +617,28 @@ function renderCards(lb) {
 function renderTable(lb) {
   const thead = document.getElementById('pointsTableHead');
   const tbody = document.querySelector('#pointsTable tbody');
-  const hasH2 = DATA.has_h2_draft;
-  const activeHalf = DATA.active_half || 'H1';
 
-  // Which driver set to show in combined view
-  const combinedHalf = (activeHalf === 'H2' && hasH2) ? 'H2' : 'H1';
-  const otherHalf = combinedHalf === 'H2' ? 'H1' : 'H2';
+  // Mobile-friendly: only rank, player and point totals.
+  // Per-driver scores are intentionally omitted here — they're shown in the leaderboard cards above.
+  thead.innerHTML = '<tr><th>#</th><th>Player</th><th>H1</th><th>H2</th><th>Total</th><th>Gap</th></tr>';
 
-  // Build dynamic header
-  let headerHtml = '<tr><th>#</th><th>Player</th>';
-  if (currentHalf === 'total') {
-    headerHtml += '<th>H1</th><th>H2</th><th>Total</th><th>Gap</th>';
-    // Current half's driver columns
-    for (let i = 1; i <= 5; i++) headerHtml += `<th style="font-size:.65rem">${combinedHalf} D${i}</th>`;
-    // Other half's driver columns (only when expanded)
-    if (showBothHalves && hasH2) {
-      for (let i = 1; i <= 5; i++) headerHtml += `<th style="font-size:.65rem">${otherHalf} D${i}</th>`;
-    }
-  } else if (currentHalf === 'h1') {
-    headerHtml += '<th>H1 Pts</th><th>Gap</th>';
-    for (let i = 1; i <= 5; i++) headerHtml += `<th style="font-size:.65rem">Driver ${i}</th>`;
-  } else {
-    headerHtml += '<th>H2 Pts</th><th>Gap</th>';
-    for (let i = 1; i <= 5; i++) headerHtml += `<th style="font-size:.65rem">Driver ${i}</th>`;
-  }
-  headerHtml += '</tr>';
-  thead.innerHTML = headerHtml;
-
-  // Sort by the relevant score
-  const sorted = [...lb].sort((a, b) => {
-    if (currentHalf === 'h1') return b.h1 - a.h1;
-    if (currentHalf === 'h2') return b.h2 - a.h2;
-    return b.total - a.total;
-  });
+  // Sort by the active tab's score (Combined = total)
+  const sortKey = currentHalf === 'h1' ? 'h1' : (currentHalf === 'h2' ? 'h2' : 'total');
+  const sorted = [...lb].sort((a, b) => b[sortKey] - a[sortKey]);
+  const topScore = sorted.length ? sorted[0][sortKey] : 0;
 
   tbody.innerHTML = sorted.map((p, i) => {
-    let row = `<tr>
-      <td style="font-weight:800">${i+1}</td>
-      <td style="text-align:left;font-weight:700;color:${PLAYER_COLORS[p.name]||'var(--text)'}">${p.name}</td>`;
-
-    if (currentHalf === 'total') {
-      const gap = i === 0 ? '—' : `−${(sorted[0].total - p.total).toFixed(1)}`;
-      row += `<td>${p.h1}</td><td>${p.h2}</td>
-        <td style="font-weight:800;font-size:1rem">${p.total}</td>
-        <td style="color:var(--muted)">${gap}</td>`;
-      // Current half's driver columns
-      const primaryDrivers = combinedHalf === 'H2' ? p.drivers_h2 : p.drivers_h1;
-      for (let j = 0; j < 5; j++) {
-        const d = (primaryDrivers || [])[j];
-        row += d ? `<td style="font-size:.7rem;white-space:nowrap">${d.name.split(' ').pop()} <span style="font-weight:700;color:var(--red)">${d.points}</span></td>` : '<td></td>';
-      }
-      // Other half (only when expanded)
-      if (showBothHalves && hasH2) {
-        const otherDrivers = combinedHalf === 'H2' ? p.drivers_h1 : p.drivers_h2;
-        for (let j = 0; j < 5; j++) {
-          const d = (otherDrivers || [])[j];
-          row += d ? `<td style="font-size:.7rem;white-space:nowrap">${d.name.split(' ').pop()} <span style="font-weight:700;color:var(--blue)">${d.points}</span></td>` : '<td></td>';
-        }
-      }
-    } else {
-      const pts = currentHalf === 'h1' ? p.h1 : p.h2;
-      const topPts = currentHalf === 'h1' ? sorted[0].h1 : sorted[0].h2;
-      const gap = i === 0 ? '—' : `−${(topPts - pts).toFixed(1)}`;
-      const drivers = currentHalf === 'h1' ? p.drivers_h1 : p.drivers_h2;
-      row += `<td style="font-weight:800;font-size:1rem">${pts}</td>
-        <td style="color:var(--muted)">${gap}</td>`;
-      for (let j = 0; j < 5; j++) {
-        const d = (drivers || [])[j];
-        row += d ? `<td style="font-size:.7rem;white-space:nowrap">${d.name.split(' ').pop()} <span style="font-weight:700;color:var(--red)">${d.points}</span></td>` : '<td></td>';
-      }
-    }
-
-    row += '</tr>';
-    return row;
+    const gap = i === 0 ? '—' : `−${(topScore - p[sortKey]).toFixed(1)}`;
+    // Highlight the column the table is currently sorted by
+    const cell = (k, extra = '') => `<td style="${extra}${sortKey === k ? ';font-weight:800' : ''}">${p[k]}</td>`;
+    return `<tr>
+      <td style="font-weight:800">${i + 1}</td>
+      <td style="text-align:left;font-weight:700;color:${PLAYER_COLORS[p.name] || 'var(--text)'}">${p.name}</td>
+      ${cell('h1')}
+      ${cell('h2')}
+      ${cell('total', 'font-weight:800;font-size:1rem')}
+      <td style="color:var(--muted)">${gap}</td>
+    </tr>`;
   }).join('');
 }
 
@@ -809,10 +759,11 @@ function renderRecent() {
 
     const totalRacePoints = Object.values(totalPlayerPoints).reduce((sum, pts) => sum + pts, 0);
 
-    // Sort sessions by type order: race first, then sprint, then qualifying
-    const sessionOrder = { race: 0, sprint: 1, qualifying: 2 };
+    // Sort sessions by type order: race first, then qualifying, then sprint
+    // NOTE: use ?? (not ||) so that race's order value of 0 isn't treated as falsy
+    const sessionOrder = { race: 0, qualifying: 1, sprint: 2 };
     const sortedSessions = race.sessions.sort((a, b) => 
-      (sessionOrder[a.session_type] || 99) - (sessionOrder[b.session_type] || 99)
+      (sessionOrder[a.session_type] ?? 99) - (sessionOrder[b.session_type] ?? 99)
     );
 
     // Render each session as a tile
@@ -1337,7 +1288,7 @@ function renderDriverResults() {
     tbody.innerHTML = pageResults.map(r => `
       <tr>
         <td class="race-name">${r.country_flag} ${r.grand_prix}</td>
-        <td>${new Date(r.date).toLocaleDateString()}</td>
+        <td class="hide-mobile">${new Date(r.date).toLocaleDateString()}</td>
         <td style="text-align:center">
           <span class="position ${typeof r.quali === 'string' && r.quali !== '-' ? 'dnf' : ''}">${r.quali !== null ? (r.quali === '-' ? '—' : (typeof r.quali === 'number' ? 'P' + r.quali : r.quali)) : '—'}</span>
         </td>
