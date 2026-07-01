@@ -796,23 +796,46 @@ def _do_sync(state: dict):
 
     # Get existing sessions (from sheets, loaded on startup)
     existing_sessions = state.get("sessions", [])
-    existing_keys = {s.session_key for s in existing_sessions}
+    
+    # IMPORTANT: Sessions loaded from sheets have SYNTHETIC session_keys (round*100+type)
+    # but the OpenF1 API uses REAL session_keys (like 9876, 9877...).
+    # We must track which (round_number, session_type) combos we already have,
+    # and also pass real API keys to exclude_keys for sessions we got from the API previously.
+    existing_identities = {(s.round_number, s.session_type.value) for s in existing_sessions}
+    
+    # Collect real API session keys (non-synthetic ones, i.e. not round*100+offset)
+    # Synthetic keys are always < 3000 (max round 24 * 100 + 3 = 2403)
+    real_api_keys = {s.session_key for s in existing_sessions if s.session_key > 3000}
     
     # Get list of session keys we've already scored (from state manager)
     scored_keys = set()
     if state_mgr:
         scored_keys = set(state_mgr.state.get("scored_session_keys", []))
     
-    # Combine both - sessions we already have data for
-    known_keys = existing_keys | scored_keys
+    # Combine real API keys + scored keys for the API filter
+    known_keys = real_api_keys | scored_keys
     
-    logger.info(f"Sync: {len(existing_sessions)} sessions loaded from sheets, "
-                f"{len(scored_keys)} marked as scored")
+    logger.info(f"Sync: {len(existing_sessions)} sessions loaded, "
+                f"{len(existing_identities)} unique (round,type) combos, "
+                f"{len(real_api_keys)} real API keys, {len(scored_keys)} scored")
 
     try:
         # Fetch only NEW sessions from API (sessions not in our known set)
         new_sessions = openf1.fetch_new_sessions(exclude_keys=known_keys)
-        logger.info(f"API returned {len(new_sessions)} new sessions to process")
+        
+        # ALSO filter out sessions we already have by (round_number, session_type)
+        # This catches cases where sheets have synthetic keys that don't match API keys
+        truly_new = [
+            s for s in new_sessions 
+            if (s.round_number, s.session_type.value) not in existing_identities
+        ]
+        
+        if len(truly_new) < len(new_sessions):
+            logger.info(f"Filtered {len(new_sessions) - len(truly_new)} sessions already in sheets "
+                       f"(key mismatch but same round+type)")
+        new_sessions = truly_new
+        
+        logger.info(f"API returned {len(new_sessions)} genuinely new sessions to process")
     except Exception as e:
         logger.error(f"OpenF1 API fetch failed: {e}")
         if state_mgr:
@@ -829,11 +852,16 @@ def _do_sync(state: dict):
                 logger.warning(f"Failed to update leaderboard: {e}")
         return
 
-    # Merge new sessions with existing, deduplicating by session_key
-    # New sessions take precedence over existing ones (fresher data)
-    session_map = {s.session_key: s for s in existing_sessions}
+    # Merge new sessions with existing, deduplicating by (round_number, session_type)
+    # This is the reliable identity since session_key may differ between sheets and API
+    # New sessions take precedence over existing ones (fresher data from API)
+    session_map = {}
+    for s in existing_sessions:
+        key = (s.round_number, s.session_type.value)
+        session_map[key] = s
     for s in new_sessions:
-        session_map[s.session_key] = s  # Overwrite if exists
+        key = (s.round_number, s.session_type.value)
+        session_map[key] = s  # Overwrite with fresher API data
     
     all_sessions = sorted(session_map.values(), key=lambda s: (s.session_date, s.session_type.value))
     state["sessions"] = all_sessions

@@ -66,10 +66,18 @@ def read_results(client: "SheetsClient") -> list[Session]:
             session_type = _parse_session_type(session_name)
             half = rows[0][4] if len(rows[0]) > 4 else "H1"
             
-            # Build results list
+            # Build results list, deduplicating by driver name
+            # (keeps the first occurrence of each driver in case of duplicate rows)
             results = []
+            seen_drivers = set()
             for row in rows:
                 driver_name = row[5] if len(row) > 5 else ""
+                
+                # Skip duplicate driver entries within same session
+                if driver_name in seen_drivers:
+                    continue
+                seen_drivers.add(driver_name)
+                
                 driver_number = int(row[6]) if len(row) > 6 and row[6] else 0
                 position_str = str(row[7]) if len(row) > 7 else ""
                 dnf_str = row[8] if len(row) > 8 else ""
@@ -137,13 +145,15 @@ def write_results(
 ):
     """Write all session results to Google Sheets.
     
-    Important: Deduplicates sessions by session_key before writing to prevent
-    duplicate entries in the sheet.
+    Important: Deduplicates sessions by (round_number, session_type) before writing
+    to prevent duplicate entries in the sheet.
     """
-    # Deduplicate sessions by session_key (keep the last one - newest data)
+    # Deduplicate sessions by (round_number, session_type) - the reliable identity
+    # session_key can differ between sheets-loaded (synthetic) and API-loaded (real)
     session_map = {}
     for session in sessions:
-        session_map[session.session_key] = session
+        key = (session.round_number, session.session_type.value)
+        session_map[key] = session  # Keep the last one (newest data)
     
     unique_sessions = list(session_map.values())
     logger.info(f"Deduplicating: {len(sessions)} sessions → {len(unique_sessions)} unique")
