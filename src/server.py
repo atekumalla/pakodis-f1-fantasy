@@ -243,19 +243,10 @@ async def get_status():
     from datetime import date as dt_date
     today = dt_date.today()
     
-    # Get dynamic halfway round and race count
-    api = _app_state.get("openf1_api")
-    if api:
-        try:
-            stats = api.get_season_stats()
-            total_races = stats["active_races"]
-            halfway_round = stats["halfway_round"]
-        except Exception:
-            total_races = 22  # fallback
-            halfway_round = HALFWAY_ROUND
-    else:
-        total_races = 22
-        halfway_round = HALFWAY_ROUND
+    # For display: Always show original calendar (24 rounds) and Round 12 as halfway
+    # Even though 2 races are cancelled, we keep the original round numbering
+    total_races = 24  # Original 2026 calendar count
+    halfway_round = 12  # British GP is Round 12 (halfway point)
     
     # Determine active half based on calendar
     try:
