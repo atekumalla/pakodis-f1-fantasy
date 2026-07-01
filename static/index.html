@@ -159,9 +159,9 @@ tbody tr:hover{background:var(--surface2)}
 .driver-detail-meta-item strong{color:var(--text)}
 .driver-results-table{width:100%;border-collapse:collapse;margin-top:1rem}
 .driver-results-table th{background:var(--surface2);padding:.75rem;font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:700;text-transform:uppercase;border-bottom:2px solid var(--divider);text-align:left}
-.driver-results-table th:nth-child(3),.driver-results-table th:nth-child(4),.driver-results-table th:nth-child(5){text-align:center}
+.driver-results-table th:nth-child(3),.driver-results-table th:nth-child(4),.driver-results-table th:nth-child(5),.driver-results-table th:nth-child(6){text-align:center}
 .driver-results-table td{padding:.75rem;border-bottom:1px solid var(--divider);font-size:.875rem;text-align:left}
-.driver-results-table td:nth-child(3),.driver-results-table td:nth-child(4),.driver-results-table td:nth-child(5){text-align:center}
+.driver-results-table td:nth-child(3),.driver-results-table td:nth-child(4),.driver-results-table td:nth-child(5),.driver-results-table td:nth-child(6){text-align:center}
 .driver-results-table tbody tr:hover{background:var(--surface2)}
 .driver-results-table .race-name{font-weight:700}
 .driver-results-table .position{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem}
@@ -404,6 +404,7 @@ tbody tr:hover{background:var(--surface2)}
           <th>Grand Prix</th>
           <th>Date</th>
           <th style="text-align:center">Quali</th>
+          <th style="text-align:center">Sprint</th>
           <th style="text-align:center">Race</th>
           <th style="text-align:center">Points</th>
         </tr>
@@ -1279,6 +1280,7 @@ function openDriverDetailModal(driverNumber) {
         date: s.date,
         country_flag: s.country_flag,
         quali: null,
+        sprint: null,
         race: null,
         points: 0
       });
@@ -1290,12 +1292,16 @@ function openDriverDetailModal(driverNumber) {
     const result = s.results?.find(r => r.driver.toLowerCase() === driverNameLower);
     if (result) {
       console.log('Found result for', driverInfo.name, 'in', s.grand_prix, s.session_type, '- Position:', result.position, 'Points:', result.points);
+      const pos = result.position || (result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : '-')));
       if (s.session_type === 'qualifying') {
-        race.quali = result.position || (result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : '-')));
+        race.quali = pos;
+      } else if (s.session_type === 'sprint') {
+        race.sprint = pos;
       } else if (s.session_type === 'race') {
-        race.race = result.position || (result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : '-')));
-        race.points = result.points || 0;
+        race.race = pos;
       }
+      // Accumulate points from all session types
+      race.points = Math.round((race.points + (result.points || 0)) * 100) / 100;
     }
   });
   
@@ -1321,7 +1327,7 @@ function renderDriverResults() {
   // Populate results table
   const tbody = document.getElementById('driverDetailResults');
   if (results.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No race results yet</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">No race results yet</td></tr>';
     document.getElementById('driverResultsPagination').style.display = 'none';
   } else {
     tbody.innerHTML = pageResults.map(r => `
@@ -1330,6 +1336,9 @@ function renderDriverResults() {
         <td>${new Date(r.date).toLocaleDateString()}</td>
         <td style="text-align:center">
           <span class="position ${typeof r.quali === 'string' && r.quali !== '-' ? 'dnf' : ''}">${r.quali !== null ? (r.quali === '-' ? '—' : (typeof r.quali === 'number' ? 'P' + r.quali : r.quali)) : '—'}</span>
+        </td>
+        <td style="text-align:center">
+          <span class="position ${typeof r.sprint === 'string' && r.sprint !== '-' ? 'dnf' : ''}" style="${r.sprint !== null ? 'color:var(--gold)' : ''}">${r.sprint !== null ? (r.sprint === '-' ? '—' : (typeof r.sprint === 'number' ? 'P' + r.sprint : r.sprint)) : '—'}</span>
         </td>
         <td style="text-align:center">
           <span class="position ${typeof r.race === 'string' && r.race !== '-' ? 'dnf' : ''}">${r.race !== null ? (r.race === '-' ? '—' : (typeof r.race === 'number' ? 'P' + r.race : r.race)) : '—'}</span>

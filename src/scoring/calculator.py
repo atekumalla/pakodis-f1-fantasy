@@ -92,6 +92,27 @@ class ScoringCalculator:
             total += pts_map_lower.get(driver_lower, 0.0)
         return round(total, 2)
 
+    def calculate_driver_breakdown(
+        self,
+        driver_name: str,
+        sessions: list[Session],
+        half: str | None = None,
+    ) -> dict[str, float]:
+        """Points breakdown by session type (race, qualifying, sprint)."""
+        breakdown = {"race": 0.0, "qualifying": 0.0, "sprint": 0.0}
+        driver_lower = driver_name.lower()
+        for session in sessions:
+            if half and session.half != half:
+                continue
+            pts_map = self.calculate_session_points(session)
+            pts_map_lower = {k.lower(): v for k, v in pts_map.items()}
+            pts = pts_map_lower.get(driver_lower, 0.0)
+            if pts > 0:
+                breakdown[session.session_type.value] = round(
+                    breakdown.get(session.session_type.value, 0.0) + pts, 2
+                )
+        return breakdown
+
     def build_leaderboard(
         self,
         players: list[DraftPlayer],
