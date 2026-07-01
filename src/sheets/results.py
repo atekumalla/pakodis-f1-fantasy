@@ -135,10 +135,22 @@ def write_results(
     sessions: list[Session],
     calculator: "ScoringCalculator",
 ):
-    """Write all session results to Google Sheets."""
+    """Write all session results to Google Sheets.
+    
+    Important: Deduplicates sessions by session_key before writing to prevent
+    duplicate entries in the sheet.
+    """
+    # Deduplicate sessions by session_key (keep the last one - newest data)
+    session_map = {}
+    for session in sessions:
+        session_map[session.session_key] = session
+    
+    unique_sessions = list(session_map.values())
+    logger.info(f"Deduplicating: {len(sessions)} sessions → {len(unique_sessions)} unique")
+    
     rows = [HEADERS]
 
-    for session in sorted(sessions, key=lambda s: (s.session_date, s.session_type.value)):
+    for session in sorted(unique_sessions, key=lambda s: (s.session_date, s.session_type.value)):
         if not session.is_finished and not session.is_live:
             continue
 
