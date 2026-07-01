@@ -2,6 +2,7 @@
 .env
 credentials.json
 *.json.key
+f1-fantasy-*.json
 
 # Virtual environment
 .venv/

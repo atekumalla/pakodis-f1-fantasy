@@ -18,6 +18,8 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;letter-spacing:.02em}
 .hdr-title span{color:var(--red)}
 .hdr-sub{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.sync-indicator{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-left:8px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .hdr-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .8rem;border-radius:.5rem;font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;transition:all .18s;white-space:nowrap;text-decoration:none}
 .btn-red{background:var(--red);color:#fff}.btn-red:hover:not(:disabled){background:var(--red-hover)}
@@ -445,13 +447,44 @@ async function load() {
   } catch(e) { console.error('Failed to load:', e); }
 }
 
+function formatRelativeTime(dateString) {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  
+  // For older dates, show the actual date
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 function render() {
   if (!DATA) return;
   const lb = DATA.leaderboard;
   if (!lb.length) return;
 
-  // Header
-  document.getElementById('headerSub').textContent = `${DATA.season_year} Season • ${DATA.total_races} Races • Halfway at Round ${DATA.halfway_round}`;
+  // Header with last sync time
+  let headerText = `${DATA.season_year} Season • ${DATA.total_races} Races • Halfway at Round ${DATA.halfway_round}`;
+  if (DATA.last_sync) {
+    const syncDate = new Date(DATA.last_sync);
+    const fullTime = syncDate.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    const relativeTime = formatRelativeTime(DATA.last_sync);
+    headerText += ` • Last sync: ${relativeTime} (${fullTime})`;
+  }
+  document.getElementById('headerSub').textContent = headerText;
   if (DATA.spreadsheet_url) { document.getElementById('btnSheet').href = DATA.spreadsheet_url; }
 
   // Leader banner
