@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F1 2026 Fantasy Draft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root,[data-theme="light"]{--bg:#f0f2f5;--surface:#fff;--surface2:#f7f8fa;--border:#ced1d9;--divider:#d8dbe1;--text:#111827;--muted:#6b7280;--faint:#9ca3af;--red:#e10600;--red-hover:#b30500;--red-light:#fce4e4;--gold:#d97706;--gold-light:#fef3c7;--blue:#2563eb;--blue-light:#dbeafe;--shadow-sm:0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08);--shadow-lg:0 12px 32px rgba(0,0,0,.12)}
+[data-theme="dark"]{--bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--divider:#21262d;--text:#e6edf3;--muted:#8b949e;--faint:#4d5566;--red:#e10600;--red-hover:#ff1e00;--red-light:#3a0a0a;--gold:#f59e0b;--gold-light:#451a03;--blue:#3b82f6;--blue-light:#1e3a5f;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 12px rgba(0,0,0,.4);--shadow-lg:0 12px 32px rgba(0,0,0,.5)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100dvh;font-family:'Barlow',system-ui,sans-serif;color:var(--text);background:var(--bg);line-height:1.5}
+button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
+.hdr{background:var(--surface);border-bottom:2px solid var(--red);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.hdr-brand{display:flex;align-items:center;gap:.75rem}
+.hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;letter-spacing:.02em}
+.hdr-title span{color:var(--red)}
+.hdr-sub{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.hdr-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .8rem;border-radius:.5rem;font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;transition:all .18s;white-space:nowrap;text-decoration:none}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover:not(:disabled){background:var(--red-hover)}
+.btn-sec{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-sec:hover:not(:disabled){background:var(--divider)}
+.btn-share{background:#25D366;color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.main{max-width:1280px;margin:0 auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.5rem}
+.leader-banner{background:linear-gradient(135deg,var(--red) 0%,#b30500 60%,#8b0000 100%);border-radius:1rem;padding:1.2rem 2rem;display:flex;align-items:center;justify-content:space-between;color:#fff;position:relative;overflow:hidden}
+.leader-banner::before{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06)}
+.leader-name{font-family:'Barlow Condensed',sans-serif;font-size:clamp(3.5rem,3rem+3vw,6rem);font-weight:800;line-height:1}
+.leader-label{font-size:1rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;opacity:.85}
+.leader-pts{font-size:1.1rem;opacity:.85;margin-top:.35rem}
+.leader-pts strong{opacity:1}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.25rem}
+.player-tile{background:var(--surface);border:1px solid var(--border);border-radius:1rem;padding:1.25rem;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.player-tile::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--player-color)}
+.player-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.player-info{display:flex;flex-direction:column;gap:.25rem}
+.player-name{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800}
+.player-rank{font-size:.8rem;padding:2px 8px;border-radius:4px;font-weight:700}
+.rank-1{background:linear-gradient(135deg,#FFD700,#FFA500);color:#000}
+.rank-2{background:linear-gradient(135deg,#C0C0C0,#A0A0A0);color:#000}
+.rank-3{background:linear-gradient(135deg,#CD7F32,#8B4513);color:#fff}
+.rank-other{background:var(--surface2);color:var(--muted)}
+.player-points{display:flex;align-items:baseline;gap:.5rem}
+.player-total{font-family:'Barlow Condensed',sans-serif;font-size:2.25rem;font-weight:800}
+.player-breakdown{font-size:.75rem;color:var(--muted)}
+.driver-grid{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem}
+.driver-row{display:flex;align-items:center;gap:.75rem;padding:.5rem;border-radius:.5rem;background:var(--surface2);border-left:3px solid var(--team-color,var(--border));cursor:pointer;transition:all .15s}
+.driver-row:hover{background:var(--divider);transform:translateX(2px)}
+.driver-photo{width:40px;height:40px;border-radius:50%;object-fit:cover;background:var(--border);flex-shrink:0}
+.driver-initials{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.75rem;font-family:'Barlow Condensed',sans-serif}
+.driver-details{flex:1;min-width:0}
+.driver-name-row{display:flex;align-items:center;gap:.5rem}
+.driver-flag{font-size:.9rem}
+.driver-fullname{font-weight:700;font-size:.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.driver-meta{display:flex;align-items:center;gap:.5rem;font-size:.7rem;color:var(--muted)}
+.driver-number{font-weight:800;font-size:.75rem;min-width:24px;text-align:center;padding:2px 4px;border-radius:3px;background:var(--surface);border:1px solid var(--border)}
+.driver-team{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.driver-points{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--red);min-width:45px;text-align:right}
+.half-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:1rem 0 .5rem;padding-top:.5rem;border-top:1px solid var(--divider)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1rem;box-shadow:var(--shadow-sm)}
+.card-name{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700}
+.card-pts{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;margin:.25rem 0}
+.card-detail{font-size:.75rem;color:var(--muted)}
+.card-drivers{display:flex;flex-direction:column;gap:3px;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--divider)}
+.drv-chip{font-size:.75rem;background:var(--surface2);padding:2px 6px;border-radius:4px;display:flex;justify-content:space-between}
+.drv-chip .pts{font-weight:700;color:var(--red)}
+.half-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:8px;padding:3px}
+.half-tab{padding:6px 16px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s}
+.half-tab.active{background:var(--red);color:#fff}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem;box-shadow:var(--shadow-sm)}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem}
+table{width:100%;border-collapse:collapse}
+th{font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:.5rem;border-bottom:2px solid var(--divider);text-align:center}
+th:nth-child(2){text-align:left}
+td{padding:.5rem;border-bottom:1px solid var(--divider);text-align:center;font-size:.875rem}
+tbody tr:hover{background:var(--surface2)}
+.chart-container{position:relative;height:280px}
+.session-card{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:.75rem;border-left:3px solid var(--red)}
+.session-meta{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-bottom:.5rem}
+.session-badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.7rem;font-weight:700;text-transform:uppercase}
+.badge-race{background:var(--red-light);color:var(--red)}.badge-quali{background:var(--blue-light);color:var(--blue)}.badge-sprint{background:var(--gold-light);color:var(--gold)}
+.result-row{display:flex;justify-content:space-between;font-size:.8rem;padding:2px 0}
+.result-row .pos{font-weight:700;width:28px}.result-row .name{flex:1}.result-row .pts{font-weight:700;color:var(--red)}
+.result-row .owner{font-size:.7rem;color:var(--muted);margin-left:4px}
+.race-weekend{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem;margin-bottom:1.5rem;box-shadow:var(--shadow-sm)}
+.race-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:2px solid var(--divider)}
+.race-flag{font-size:2.5rem}
+.race-info{flex:1}
+.race-title{font-family:'Barlow Condensed',sans-serif;font-size:1.75rem;font-weight:800;line-height:1.1;color:var(--text)}
+.race-meta{font-size:.8rem;color:var(--muted);margin-top:.25rem}
+.race-total-points{text-align:right}
+.race-total-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.race-total-value{font-family:'Barlow Condensed',sans-serif;font-size:1.75rem;font-weight:800;color:var(--red)}
+.sessions-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+.session-tile{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;padding:1rem;border-left:3px solid var(--session-color,var(--red))}
+.session-tile-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+.session-tile-name{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700}
+.session-tile-points{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;color:var(--session-color,var(--red))}
+.session-results{display:flex;flex-direction:column;gap:4px}
+.session-player-points{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--divider);font-size:.75rem}
+.pagination{display:flex;align-items:center;justify-content:center;gap:1rem;margin-top:1.5rem}
+.pagination-info{font-size:.875rem;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700}
+.pagination-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border-radius:.5rem;font-family:'Barlow Condensed',sans-serif;font-size:.875rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;transition:all .18s;background:var(--surface2);color:var(--text);border:1px solid var(--border);cursor:pointer}
+.pagination-btn:hover:not(:disabled){background:var(--red);color:#fff;border-color:var(--red)}
+.pagination-btn:disabled{opacity:.4;cursor:not-allowed}
+.upcoming-race-card{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow-sm)}
+.upcoming-race-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:2px solid var(--divider)}
+.upcoming-race-flag{font-size:2rem}
+.upcoming-race-info{flex:1}
+.upcoming-race-name{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;line-height:1.1}
+.upcoming-race-meta{font-size:.8rem;color:var(--muted);margin-top:.25rem;display:flex;gap:1rem;flex-wrap:wrap}
+.upcoming-race-date{background:var(--red-light);color:var(--red);padding:4px 10px;border-radius:4px;font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:.85rem}
+.upcoming-sessions{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem}
+.upcoming-session-item{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;display:flex;flex-direction:column;gap:.25rem}
+.upcoming-session-name{font-weight:700;font-size:.875rem;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.upcoming-session-time{font-size:.75rem;color:var(--muted)}
+.show-all-btn{width:100%;padding:.5rem;margin-top:.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);cursor:pointer;transition:all .18s;font-family:'Barlow Condensed',sans-serif}
+.show-all-btn:hover{background:var(--divider);color:var(--text);border-color:var(--text)}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:.75rem 1.25rem;box-shadow:var(--shadow-lg);font-size:.875rem;font-weight:600;z-index:1000;transition:transform .3s}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:2000;padding:1rem}
+.modal.show{display:flex}
+.modal-content{background:var(--surface);border-radius:1rem;max-width:700px;max-height:90vh;overflow-y:auto;padding:2rem;box-shadow:var(--shadow-lg);position:relative}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px solid var(--divider)}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:1.75rem;font-weight:800;color:var(--red)}
+.modal-close{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;cursor:pointer;font-size:1.25rem;line-height:1;transition:all .18s}
+.modal-close:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.rules-section{margin-bottom:1.5rem}
+.rules-section-title{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:700;margin-bottom:.75rem;color:var(--text)}
+.rules-table{width:100%;border-collapse:collapse;margin-bottom:1rem}
+.rules-table th{background:var(--surface2);padding:.5rem;text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:.875rem;font-weight:700;text-transform:uppercase;border-bottom:2px solid var(--divider)}
+.rules-table td{padding:.5rem;border-bottom:1px solid var(--divider);font-size:.875rem}
+.rules-table td:first-child{font-weight:700}
+.rules-note{background:var(--surface2);padding:1rem;border-radius:.5rem;border-left:3px solid var(--red);font-size:.875rem;color:var(--muted);margin-top:1rem}
+.standings-info{background:var(--surface2);padding:.75rem 1rem;border-radius:.5rem;margin-bottom:1.5rem;font-size:.875rem;color:var(--muted);text-align:center}
+.standings-table{width:100%;border-collapse:collapse}
+.standings-table th{background:var(--surface2);padding:.75rem;font-family:'Barlow Condensed',sans-serif;font-size:.875rem;font-weight:700;text-transform:uppercase;border-bottom:2px solid var(--divider)}
+.standings-table td{padding:.75rem;border-bottom:1px solid var(--divider);font-size:.875rem}
+.standings-table tbody tr:hover{background:var(--surface2)}
+.standings-table .pos{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem}
+.standings-table .driver-cell{display:flex;align-items:center;gap:.5rem}
+.standings-table .driver-flag{font-size:1rem}
+.standings-table .driver-name{font-weight:700}
+.standings-table .team-cell{display:flex;align-items:center;gap:.5rem}
+.standings-table .team-badge{width:12px;height:12px;border-radius:2px;flex-shrink:0}
+.standings-table .points{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;color:var(--red)}
+.driver-detail-header{display:flex;align-items:center;gap:1.5rem;padding:1.5rem;background:var(--surface2);border-radius:.75rem;margin-bottom:1.5rem}
+.driver-detail-photo{width:120px;height:120px;border-radius:50%;object-fit:cover;background:var(--border);border:3px solid var(--team-color,var(--border))}
+.driver-detail-info{flex:1}
+.driver-detail-name{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;display:flex;align-items:center;gap:.75rem}
+.driver-detail-number{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:var(--team-color,var(--red));color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800}
+.driver-detail-meta{display:flex;gap:1.5rem;margin-top:.75rem;font-size:.95rem;color:var(--muted)}
+.driver-detail-meta-item{display:flex;align-items:center;gap:.5rem}
+.driver-detail-meta-item strong{color:var(--text)}
+.driver-results-table{width:100%;border-collapse:collapse;margin-top:1rem}
+.driver-results-table th{background:var(--surface2);padding:.75rem;font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:700;text-transform:uppercase;border-bottom:2px solid var(--divider);text-align:left}
+.driver-results-table th:nth-child(3),.driver-results-table th:nth-child(4),.driver-results-table th:nth-child(5){text-align:center}
+.driver-results-table td{padding:.75rem;border-bottom:1px solid var(--divider);font-size:.875rem;text-align:left}
+.driver-results-table td:nth-child(3),.driver-results-table td:nth-child(4),.driver-results-table td:nth-child(5){text-align:center}
+.driver-results-table tbody tr:hover{background:var(--surface2)}
+.driver-results-table .race-name{font-weight:700}
+.driver-results-table .position{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem}
+.driver-results-table .points{font-family:'Barlow Condensed',sans-serif;font-weight:800;color:var(--red)}
+.driver-results-table .dnf{color:var(--muted);font-style:italic}
+.footer{text-align:center;padding:2rem 1rem;color:var(--faint);font-size:.75rem}
+.footer a{color:var(--red);text-decoration:none}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}
+@media(max-width:600px){.main{padding:1rem;gap:1rem}.cards{grid-template-columns:1fr}.hdr{padding:.75rem;flex-wrap:wrap;gap:.5rem}.hdr-actions{width:100%;justify-content:flex-end}.driver-row{padding:.4rem}.driver-photo{width:32px;height:32px}.modal-content{padding:1.5rem}}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-brand">
+    <div><div class="hdr-title"><span>F1</span> 2026 Fantasy Draft</div><div class="hdr-sub" id="headerSub">Loading...</div></div>
+  </div>
+  <div class="hdr-actions">
+    <a class="btn btn-sec" href="/draft">🏁 Mid-Season Draft</a>
+    <button class="btn btn-sec" id="btnRules">📋 Rules</button>
+    <button class="btn btn-sec" id="btnDriverStandings">🏎️ Drivers</button>
+    <button class="btn btn-sec" id="btnConstructorStandings">🏁 Constructors</button>
+    <button class="btn btn-red" id="btnSync">↻ Sync</button>
+    <button class="btn btn-share" id="btnShare">📱 Share</button>
+    <a class="btn btn-sec" id="btnSheet" href="#" target="_blank">📊 Sheet</a>
+  </div>
+</header>
+<main class="main">
+  <div class="leader-banner">
+    <div><div class="leader-label">🏆 Current Leader</div><div class="leader-name" id="leaderName" style="font-size:3rem !important">Loading...</div><div class="leader-pts" id="leaderPts"></div></div>
+    <div style="font-size:2.5rem">🏆</div>
+  </div>
+  <div style="display:flex;justify-content:center">
+    <div class="half-tabs">
+      <div class="half-tab active" data-half="total">Combined</div>
+      <div class="half-tab" data-half="h1">H1 (Rd 1-12)</div>
+      <div class="half-tab" data-half="h2">H2 (Rd 13-24)</div>
+    </div>
+  </div>
+  <div class="cards" id="kpiCards"></div>
+  <div class="two-col">
+    <div class="section">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="section-title" style="margin:0">📊 Points Table</div>
+        <button id="btnToggleHalves" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;padding:4px 12px;border-radius:6px;border:1px solid var(--muted);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s" onclick="toggleBothHalves()">Show both halves ▸</button>
+      </div>
+      <div style="overflow-x:auto"><table id="pointsTable"><thead id="pointsTableHead"><tr><th>#</th><th>Player</th><th>H1</th><th>H2</th><th>Total</th><th>Gap</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="section">
+      <div class="section-title">📈 Score Worm</div>
+      <div class="chart-container"><canvas id="wormChart"></canvas></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">🏁 Recent Races</div>
+    <div id="recentSessions"></div>
+    <div class="pagination" id="sessionsPagination" style="display:none">
+      <button class="pagination-btn" id="btnPrevSessions" onclick="changePage(-1)">
+        ← Previous
+      </button>
+      <span class="pagination-info" id="paginationInfo"></span>
+      <button class="pagination-btn" id="btnNextSessions" onclick="changePage(1)">
+        Next →
+      </button>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">📅 Upcoming Races</div>
+    <div id="upcomingRaces"></div>
+    <div class="pagination" id="upcomingPagination" style="display:none">
+      <button class="pagination-btn" id="btnPrevUpcoming" onclick="changeUpcomingPage(-1)">
+        ← Previous
+      </button>
+      <span class="pagination-info" id="upcomingPaginationInfo"></span>
+      <button class="pagination-btn" id="btnNextUpcoming" onclick="changeUpcomingPage(1)">
+        Next →
+      </button>
+    </div>
+  </div>
+</main>
+<div class="footer">F1 2026 Fantasy Draft — <a href="/draft">Mid-Season Draft</a> | Powered by OpenF1 API</div>
+<div class="toast" id="toast"></div>
+
+<!-- Rules Modal -->
+<div class="modal" id="rulesModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">🏎️ Fantasy F1 Scoring Rules</h2>
+      <button class="modal-close" onclick="closeRulesModal()">×</button>
+    </div>
+    
+    <div class="rules-section">
+      <h3 class="rules-section-title">🏁 Race Scoring</h3>
+      <table class="rules-table">
+        <thead>
+          <tr>
+            <th>Position</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1st Place</td><td>+25 pts</td></tr>
+          <tr><td>2nd Place</td><td>+18 pts</td></tr>
+          <tr><td>3rd Place</td><td>+15 pts</td></tr>
+          <tr><td>4th Place</td><td>+12 pts</td></tr>
+          <tr><td>5th Place</td><td>+10 pts</td></tr>
+          <tr><td>6th Place</td><td>+8 pts</td></tr>
+          <tr><td>7th Place</td><td>+6 pts</td></tr>
+          <tr><td>8th Place</td><td>+4 pts</td></tr>
+          <tr><td>9th Place</td><td>+2 pts</td></tr>
+          <tr><td>10th Place</td><td>+1 pt</td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="rules-section">
+      <h3 class="rules-section-title">⚡ Sprint Scoring</h3>
+      <table class="rules-table">
+        <thead>
+          <tr>
+            <th>Position</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1st Place</td><td>+8 pts</td></tr>
+          <tr><td>2nd Place</td><td>+7 pts</td></tr>
+          <tr><td>3rd Place</td><td>+6 pts</td></tr>
+          <tr><td>4th Place</td><td>+5 pts</td></tr>
+          <tr><td>5th Place</td><td>+4 pts</td></tr>
+          <tr><td>6th Place</td><td>+3 pts</td></tr>
+          <tr><td>7th Place</td><td>+2 pts</td></tr>
+          <tr><td>8th Place</td><td>+1 pt</td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="rules-section">
+      <h3 class="rules-section-title">⏱️ Qualifying Scoring</h3>
+      <table class="rules-table">
+        <thead>
+          <tr>
+            <th>Position</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Pole Position (P1)</td><td>+3 pts</td></tr>
+          <tr><td>2nd Place</td><td>+2 pts</td></tr>
+          <tr><td>3rd Place</td><td>+1 pt</td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="rules-section">
+      <h3 class="rules-section-title">📊 Season Structure</h3>
+      <div class="rules-note">
+        <strong>Two Halves:</strong> The season is split into two halves at Round 12 (British GP).<br>
+        <strong>Mid-Season Draft:</strong> After Round 12, teams can re-draft their 5 drivers for the second half.<br>
+        <strong>Total Score:</strong> Your final score is the sum of H1 + H2 points.
+      </div>
+    </div>
+    
+    <div class="rules-section">
+      <h3 class="rules-section-title">❌ Penalties</h3>
+      <div class="rules-note">
+        <strong>DNF (Did Not Finish):</strong> 0 points<br>
+        <strong>DNS (Did Not Start):</strong> 0 points<br>
+        <strong>DSQ (Disqualified):</strong> 0 points
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Driver Standings Modal -->
+<div class="modal" id="driverStandingsModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">🏎️ F1 Driver Championship</h2>
+      <button class="modal-close" onclick="closeDriverStandingsModal()">×</button>
+    </div>
+    
+    <div class="standings-info" id="driverStandingsInfo"></div>
+    
+    <table class="standings-table">
+      <thead>
+        <tr>
+          <th>Pos</th>
+          <th style="text-align:left">Driver</th>
+          <th>Team</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody id="driverStandingsBody">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Constructor Standings Modal -->
+<div class="modal" id="constructorStandingsModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">🏁 F1 Constructor Championship</h2>
+      <button class="modal-close" onclick="closeConstructorStandingsModal()">×</button>
+    </div>
+    
+    <div class="standings-info" id="constructorStandingsInfo"></div>
+    
+    <table class="standings-table">
+      <thead>
+        <tr>
+          <th>Pos</th>
+          <th style="text-align:left">Team</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody id="constructorStandingsBody">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Driver Detail Modal -->
+<div class="modal" id="driverDetailModal">
+  <div class="modal-content" style="max-width:900px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="driverDetailTitle">Driver Details</h2>
+      <button class="modal-close" onclick="closeDriverDetailModal()">×</button>
+    </div>
+    
+    <div class="driver-detail-header" id="driverDetailHeader">
+      <!-- Will be populated by JavaScript -->
+    </div>
+    
+    <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:700;margin-bottom:1rem">Race Results (Latest First)</h3>
+    
+    <table class="driver-results-table">
+      <thead>
+        <tr>
+          <th>Grand Prix</th>
+          <th>Date</th>
+          <th style="text-align:center">Quali</th>
+          <th style="text-align:center">Race</th>
+          <th style="text-align:center">Points</th>
+        </tr>
+      </thead>
+      <tbody id="driverDetailResults">
+      </tbody>
+    </table>
+    
+    <div class="pagination" id="driverResultsPagination" style="display:none;margin-top:1.5rem">
+      <button class="pagination-btn" id="btnDriverResultsPrev" onclick="changeDriverResultsPage(-1)">← Previous</button>
+      <span class="pagination-info" id="driverResultsPageInfo">Page 1</span>
+      <button class="pagination-btn" id="btnDriverResultsNext" onclick="changeDriverResultsPage(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PLAYER_COLORS = {'Anup':'#e10600','Rohit':'#3b82f6','Abhinav':'#22c55e','Prateik':'#f59e0b'};
+let DATA = null;
+let CALENDAR = null;
+let currentHalf = 'total';
+let showBothHalves = false;  // toggle for Combined view driver columns
+let wormChart = null;
+let currentPage = 1;  // Current page for race sessions pagination
+const RACES_PER_PAGE = 3;  // Number of race weekends per page
+let upcomingPage = 1;  // Current page for upcoming races
+const UPCOMING_PER_PAGE = 5;  // Number of upcoming races per page
+let driverResultsPage = 1;  // Current page for driver results
+const DRIVER_RESULTS_PER_PAGE = 10;  // Number of race results per page
+let driverResultsData = [];  // Store driver results for pagination
+
+async function load() {
+  try {
+    const [statusResp, calendarResp] = await Promise.all([
+      fetch('/api/status'),
+      fetch('/api/calendar')
+    ]);
+    DATA = await statusResp.json();
+    CALENDAR = await calendarResp.json();
+    render();
+  } catch(e) { console.error('Failed to load:', e); }
+}
+
+function render() {
+  if (!DATA) return;
+  const lb = DATA.leaderboard;
+  if (!lb.length) return;
+
+  // Header
+  document.getElementById('headerSub').textContent = `${DATA.season_year} Season • ${DATA.total_races} Races • Halfway at Round ${DATA.halfway_round}`;
+  if (DATA.spreadsheet_url) { document.getElementById('btnSheet').href = DATA.spreadsheet_url; }
+
+  // Leader banner
+  const leader = lb[0];
+  document.getElementById('leaderName').textContent = leader.name;
+  document.getElementById('leaderPts').innerHTML = `<strong>${leader.total} pts</strong> (H1: ${leader.h1}, H2: ${leader.h2})`;
+
+  // KPI Cards
+  renderCards(lb);
+
+  // Points Table
+  renderTable(lb);
+  updateToggleButton();
+
+  // Score Worm
+  renderWorm();
+
+  // Recent Sessions
+  renderRecent();
+
+  // Upcoming Races
+  if (CALENDAR) {
+    renderUpcoming();
+  }
+}
+
+function renderCards(lb) {
+  const el = document.getElementById('kpiCards');
+  const activeHalf = DATA.active_half || 'H1';
+  const hasH2 = DATA.has_h2_draft;
+
+  el.innerHTML = lb.map((p, i) => {
+    let drivers, pts, halfLabel;
+    if (currentHalf === 'h1') {
+      drivers = p.drivers_h1; pts = p.h1; halfLabel = 'H1';
+    } else if (currentHalf === 'h2') {
+      drivers = p.drivers_h2; pts = p.h2; halfLabel = 'H2';
+    } else {
+      // Combined: show current half's drivers by default
+      drivers = (activeHalf === 'H2' && hasH2) ? p.drivers_h2 : p.drivers_h1;
+      pts = p.total;
+      halfLabel = (activeHalf === 'H2' && hasH2) ? 'H2' : 'H1';
+    }
+
+    // Rank badge class
+    const rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : 'rank-other'));
+
+    // Build driver rows with photos and team colors
+    const driverRows = (drivers || []).map(d => {
+      const teamColor = d.team_color || '888888';
+      const headshotUrl = d.headshot_url || '';
+      const flag = d.country_flag || '';
+      const lastName = d.name ? d.name.split(' ').pop() : '';
+      const firstName = d.name ? d.name.split(' ')[0] : '';
+      const initials = (firstName[0] || '') + (lastName[0] || '');
+      const photoHtml = headshotUrl 
+        ? `<img class="driver-photo" src="${headshotUrl}" alt="${d.name}" onerror="this.outerHTML='<div class=\\'driver-photo driver-initials\\' style=\\'background:#${teamColor}\\'>${initials}</div>'">`
+        : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
+      return `<div class="driver-row" style="--team-color:#${teamColor}" onclick="openDriverDetailModal(${d.number})" title="Click for details">
+        ${photoHtml}
+        <div class="driver-details">
+          <div class="driver-name-row">
+            <span class="driver-flag">${flag}</span>
+            <span class="driver-fullname">${firstName} <strong>${lastName}</strong></span>
+          </div>
+          <div class="driver-meta">
+            <span class="driver-number">#${d.number || '?'}</span>
+            <span class="driver-team">${d.team || ''}</span>
+          </div>
+        </div>
+        <div class="driver-points">+${d.points}</div>
+      </div>`;
+    }).join('');
+
+    // In Combined + showBothHalves, show both groups
+    let otherHalfHtml = '';
+    if (currentHalf === 'total' && showBothHalves && hasH2) {
+      const otherDrivers = (activeHalf === 'H2') ? p.drivers_h1 : p.drivers_h2;
+      const otherLabel = (activeHalf === 'H2') ? 'H1' : 'H2';
+      const otherRows = (otherDrivers || []).map(d => {
+        const teamColor = d.team_color || '888888';
+        const headshotUrl = d.headshot_url || '';
+        const flag = d.country_flag || '';
+        const lastName = d.name ? d.name.split(' ').pop() : '';
+        const firstName = d.name ? d.name.split(' ')[0] : '';
+        const initials = (firstName[0] || '') + (lastName[0] || '');
+        const photoHtml = headshotUrl 
+          ? `<img class="driver-photo" src="${headshotUrl}" alt="${d.name}" onerror="this.outerHTML='<div class=\\'driver-photo driver-initials\\' style=\\'background:#${teamColor}\\'>${initials}</div>'">`
+          : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
+        return `<div class="driver-row" style="--team-color:#${teamColor};opacity:0.7" onclick="openDriverDetailModal(${d.number})" title="Click for details">
+          ${photoHtml}
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">${flag}</span>
+              <span class="driver-fullname">${firstName} <strong>${lastName}</strong></span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#${d.number || '?'}</span>
+              <span class="driver-team">${d.team || ''}</span>
+            </div>
+          </div>
+          <div class="driver-points" style="color:var(--blue)">+${d.points}</div>
+        </div>`;
+      }).join('');
+      otherHalfHtml = `<div class="half-label">${otherLabel} Picks</div><div class="driver-grid">${otherRows || '<span style="color:var(--faint);font-size:.75rem">—</span>'}</div>`;
+    }
+
+    const playerColor = PLAYER_COLORS[p.name] || 'var(--text)';
+
+    return `<div class="player-tile" style="--player-color:${playerColor}">
+      <div class="player-header">
+        <div class="player-info">
+          <div class="player-name" style="color:${playerColor}">${p.name}</div>
+          <div class="player-points">
+            <span class="player-total">${pts}</span>
+            <span class="player-breakdown">H1: ${p.h1} • H2: ${p.h2}</span>
+          </div>
+        </div>
+        <span class="player-rank ${rankClass}">#${i+1}</span>
+      </div>
+      <div class="half-label">${halfLabel} Picks</div>
+      <div class="driver-grid">${driverRows || '<span style="color:var(--faint);font-size:.875rem">No drivers yet</span>'}</div>
+      ${otherHalfHtml}
+    </div>`;
+  }).join('');
+}
+
+function renderTable(lb) {
+  const thead = document.getElementById('pointsTableHead');
+  const tbody = document.querySelector('#pointsTable tbody');
+  const hasH2 = DATA.has_h2_draft;
+  const activeHalf = DATA.active_half || 'H1';
+
+  // Which driver set to show in combined view
+  const combinedHalf = (activeHalf === 'H2' && hasH2) ? 'H2' : 'H1';
+  const otherHalf = combinedHalf === 'H2' ? 'H1' : 'H2';
+
+  // Build dynamic header
+  let headerHtml = '<tr><th>#</th><th>Player</th>';
+  if (currentHalf === 'total') {
+    headerHtml += '<th>H1</th><th>H2</th><th>Total</th><th>Gap</th>';
+    // Current half's driver columns
+    for (let i = 1; i <= 5; i++) headerHtml += `<th style="font-size:.65rem">${combinedHalf} D${i}</th>`;
+    // Other half's driver columns (only when expanded)
+    if (showBothHalves && hasH2) {
+      for (let i = 1; i <= 5; i++) headerHtml += `<th style="font-size:.65rem">${otherHalf} D${i}</th>`;
+    }
+  } else if (currentHalf === 'h1') {
+    headerHtml += '<th>H1 Pts</th><th>Gap</th>';
+    for (let i = 1; i <= 5; i++) headerHtml += `<th style="font-size:.65rem">Driver ${i}</th>`;
+  } else {
+    headerHtml += '<th>H2 Pts</th><th>Gap</th>';
+    for (let i = 1; i <= 5; i++) headerHtml += `<th style="font-size:.65rem">Driver ${i}</th>`;
+  }
+  headerHtml += '</tr>';
+  thead.innerHTML = headerHtml;
+
+  // Sort by the relevant score
+  const sorted = [...lb].sort((a, b) => {
+    if (currentHalf === 'h1') return b.h1 - a.h1;
+    if (currentHalf === 'h2') return b.h2 - a.h2;
+    return b.total - a.total;
+  });
+
+  tbody.innerHTML = sorted.map((p, i) => {
+    let row = `<tr>
+      <td style="font-weight:800">${i+1}</td>
+      <td style="text-align:left;font-weight:700;color:${PLAYER_COLORS[p.name]||'var(--text)'}">${p.name}</td>`;
+
+    if (currentHalf === 'total') {
+      const gap = i === 0 ? '—' : `−${(sorted[0].total - p.total).toFixed(1)}`;
+      row += `<td>${p.h1}</td><td>${p.h2}</td>
+        <td style="font-weight:800;font-size:1rem">${p.total}</td>
+        <td style="color:var(--muted)">${gap}</td>`;
+      // Current half's driver columns
+      const primaryDrivers = combinedHalf === 'H2' ? p.drivers_h2 : p.drivers_h1;
+      for (let j = 0; j < 5; j++) {
+        const d = (primaryDrivers || [])[j];
+        row += d ? `<td style="font-size:.7rem;white-space:nowrap">${d.name.split(' ').pop()} <span style="font-weight:700;color:var(--red)">${d.points}</span></td>` : '<td></td>';
+      }
+      // Other half (only when expanded)
+      if (showBothHalves && hasH2) {
+        const otherDrivers = combinedHalf === 'H2' ? p.drivers_h1 : p.drivers_h2;
+        for (let j = 0; j < 5; j++) {
+          const d = (otherDrivers || [])[j];
+          row += d ? `<td style="font-size:.7rem;white-space:nowrap">${d.name.split(' ').pop()} <span style="font-weight:700;color:var(--blue)">${d.points}</span></td>` : '<td></td>';
+        }
+      }
+    } else {
+      const pts = currentHalf === 'h1' ? p.h1 : p.h2;
+      const topPts = currentHalf === 'h1' ? sorted[0].h1 : sorted[0].h2;
+      const gap = i === 0 ? '—' : `−${(topPts - pts).toFixed(1)}`;
+      const drivers = currentHalf === 'h1' ? p.drivers_h1 : p.drivers_h2;
+      row += `<td style="font-weight:800;font-size:1rem">${pts}</td>
+        <td style="color:var(--muted)">${gap}</td>`;
+      for (let j = 0; j < 5; j++) {
+        const d = (drivers || [])[j];
+        row += d ? `<td style="font-size:.7rem;white-space:nowrap">${d.name.split(' ').pop()} <span style="font-weight:700;color:var(--red)">${d.points}</span></td>` : '<td></td>';
+      }
+    }
+
+    row += '</tr>';
+    return row;
+  }).join('');
+}
+
+function renderWorm() {
+  const wd = DATA.worm_data;
+  if (!wd || !wd.dates || !wd.dates.length) return;
+
+  const ctx = document.getElementById('wormChart').getContext('2d');
+  if (wormChart) wormChart.destroy();
+
+  const datasets = Object.entries(wd.players).map(([name, pts]) => ({
+    label: name,
+    data: pts,
+    borderColor: PLAYER_COLORS[name] || '#888',
+    backgroundColor: 'transparent',
+    tension: 0.3,
+    borderWidth: 2.5,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+  }));
+
+  // Halfway annotation
+  const plugins = [];
+  if (wd.halfway_index) {
+    plugins.push({
+      id: 'halfwayLine',
+      afterDraw(chart) {
+        const meta = chart.getDatasetMeta(0);
+        if (!meta.data[wd.halfway_index]) return;
+        const x = meta.data[wd.halfway_index].x;
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#e10600';
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(x, chart.chartArea.top);
+        ctx.lineTo(x, chart.chartArea.bottom);
+        ctx.stroke();
+        ctx.fillStyle = '#e10600';
+        ctx.font = 'bold 10px Barlow Condensed';
+        ctx.fillText('H1 | H2', x + 4, chart.chartArea.top + 12);
+        ctx.restore();
+      }
+    });
+  }
+
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  
+  // Use labels (race names) if available, otherwise use dates
+  const xLabels = wd.labels && wd.labels.length ? wd.labels : wd.dates;
+  
+  wormChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: xLabels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { display: true, ticks: { maxTicksLimit: 10, maxRotation: 45, minRotation: 45, font: { size: 9 }, color: isDark ? '#8b949e' : '#6b7280' }, grid: { display: true, color: isDark ? '#21262d' : '#e5e7eb', lineWidth: 1 } },
+        y: { display: true, ticks: { font: { size: 10 }, color: isDark ? '#8b949e' : '#6b7280' }, grid: { display: true, color: isDark ? '#21262d' : '#e5e7eb', lineWidth: 1 } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'Barlow Condensed', weight: 700, size: 12 }, color: isDark ? '#e6edf3' : '#111827', padding: 16, usePointStyle: true, pointStyle: 'line', pointStyleWidth: 30 } },
+        tooltip: { mode: 'index', intersect: false }
+      }
+    },
+    plugins,
+  });
+}
+
+function renderRecent() {
+  const el = document.getElementById('recentSessions');
+  const sessions = DATA.recent_sessions || [];
+  if (!sessions.length) { 
+    el.innerHTML = '<div style="color:var(--muted);font-size:.875rem">No results yet. Hit Sync to fetch data from OpenF1.</div>'; 
+    document.getElementById('sessionsPagination').style.display = 'none';
+    return; 
+  }
+
+  // Group sessions by race (grand_prix + round)
+  const raceGroups = new Map();
+  sessions.forEach(s => {
+    const key = `${s.round}-${s.grand_prix}`;
+    if (!raceGroups.has(key)) {
+      raceGroups.set(key, {
+        grand_prix: s.grand_prix,
+        country_flag: s.country_flag,
+        round: s.round,
+        half: s.half,
+        date: s.date,
+        sessions: []
+      });
+    }
+    raceGroups.get(key).sessions.push(s);
+  });
+
+  // Convert to array - all races
+  const allRaces = Array.from(raceGroups.values());
+  const totalPages = Math.ceil(allRaces.length / RACES_PER_PAGE);
+  
+  // Ensure current page is valid
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  // Get races for current page
+  const startIdx = (currentPage - 1) * RACES_PER_PAGE;
+  const endIdx = startIdx + RACES_PER_PAGE;
+  const racesToShow = allRaces.slice(startIdx, endIdx);
+
+  el.innerHTML = racesToShow.map(race => {
+    // Calculate total points for all players across all sessions in this race
+    const totalPlayerPoints = {};
+    race.sessions.forEach(s => {
+      Object.entries(s.player_points || {}).forEach(([player, pts]) => {
+        totalPlayerPoints[player] = (totalPlayerPoints[player] || 0) + pts;
+      });
+    });
+
+    const totalRacePoints = Object.values(totalPlayerPoints).reduce((sum, pts) => sum + pts, 0);
+
+    // Sort sessions by type order: race first, then sprint, then qualifying
+    const sessionOrder = { race: 0, sprint: 1, qualifying: 2 };
+    const sortedSessions = race.sessions.sort((a, b) => 
+      (sessionOrder[a.session_type] || 99) - (sessionOrder[b.session_type] || 99)
+    );
+
+    // Render each session as a tile
+    const sessionTiles = sortedSessions.map(s => {
+      const badgeClass = s.session_type === 'race' ? 'badge-race' : (s.session_type === 'sprint' ? 'badge-sprint' : 'badge-quali');
+      const sessionColor = s.session_type === 'race' ? 'var(--red)' : (s.session_type === 'sprint' ? 'var(--gold)' : 'var(--blue)');
+      
+      // Calculate total points for this session
+      const sessionTotal = Object.values(s.player_points || {}).reduce((sum, pts) => sum + pts, 0);
+      
+      const results = (s.results || []).filter(r => r.points > 0);
+      const topResults = results.slice(0, 8);
+      const hasMore = results.length > 8;
+      const playerBadges = Object.entries(s.player_points || {}).map(([n, p]) =>
+        `<span style="font-weight:700;color:${PLAYER_COLORS[n]||'var(--text)'}">${n}: +${p}</span>`
+      ).join(' • ');
+
+      const sessionId = `session-${s.round}-${s.session_type}`;
+      
+      return `<div class="session-tile" style="--session-color:${sessionColor}">
+        <div class="session-tile-header">
+          <div>
+            <span class="session-badge ${badgeClass}">${s.session_name}</span>
+            <div class="session-tile-name">${s.session_type.charAt(0).toUpperCase() + s.session_type.slice(1)}</div>
+          </div>
+          <div class="session-tile-points">+${sessionTotal.toFixed(1)}</div>
+        </div>
+        <div class="session-results" id="${sessionId}-results">
+          ${topResults.map(r => `<div class="result-row">
+            <span class="pos">P${r.position||'—'}</span>
+            <span class="name">${r.driver}${r.owner ? `<span class="owner">(${r.owner})</span>` : ''}</span>
+            <span class="pts">+${r.points}</span>
+          </div>`).join('')}
+        </div>
+        ${hasMore ? `<button class="show-all-btn" onclick="toggleSessionResults('${sessionId}', ${s.round}, '${s.session_type}')">
+          <span id="${sessionId}-btn-text">Show All ${results.length} Results</span>
+        </button>` : ''}
+        ${playerBadges ? `<div class="session-player-points">${playerBadges}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    // Player points summary for the race weekend
+    const playerPointsHtml = Object.entries(totalPlayerPoints)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, pts]) => 
+        `<span style="font-weight:700;color:${PLAYER_COLORS[name]||'var(--text)'}">${name}: +${pts.toFixed(1)}</span>`
+      ).join(' • ');
+
+    return `<div class="race-weekend">
+      <div class="race-header">
+        <div class="race-flag">${race.country_flag || '🏁'}</div>
+        <div class="race-info">
+          <div class="race-title">${race.grand_prix}</div>
+          <div class="race-meta">Round ${race.round} • ${race.half} • ${playerPointsHtml}</div>
+        </div>
+        <div class="race-total-points">
+          <div class="race-total-label">Total Points</div>
+          <div class="race-total-value">+${totalRacePoints.toFixed(1)}</div>
+        </div>
+      </div>
+      <div class="sessions-row">${sessionTiles}</div>
+    </div>`;
+  }).join('');
+
+  // Update pagination controls
+  const paginationEl = document.getElementById('sessionsPagination');
+  const paginationInfo = document.getElementById('paginationInfo');
+  const btnPrev = document.getElementById('btnPrevSessions');
+  const btnNext = document.getElementById('btnNextSessions');
+
+  if (totalPages > 1) {
+    paginationEl.style.display = 'flex';
+    paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    btnPrev.disabled = currentPage === 1;
+    btnNext.disabled = currentPage === totalPages;
+  } else {
+    paginationEl.style.display = 'none';
+  }
+}
+
+function changePage(direction) {
+  currentPage += direction;
+  renderRecent();
+  // Scroll to top of recent sessions section
+  document.getElementById('recentSessions').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleSessionResults(sessionId, round, sessionType) {
+  const resultsEl = document.getElementById(`${sessionId}-results`);
+  const btnTextEl = document.getElementById(`${sessionId}-btn-text`);
+  
+  // Find the session in DATA
+  const sessions = DATA.recent_sessions || [];
+  const session = sessions.find(s => s.round === round && s.session_type === sessionType);
+  
+  if (!session) return;
+  
+  const allResults = (session.results || []).filter(r => r.points > 0);
+  const isExpanded = resultsEl.dataset.expanded === 'true';
+  
+  if (isExpanded) {
+    // Collapse - show only top 8
+    const topResults = allResults.slice(0, 8);
+    resultsEl.innerHTML = topResults.map(r => `<div class="result-row">
+      <span class="pos">P${r.position||'—'}</span>
+      <span class="name">${r.driver}${r.owner ? `<span class="owner">(${r.owner})</span>` : ''}</span>
+      <span class="pts">+${r.points}</span>
+    </div>`).join('');
+    resultsEl.dataset.expanded = 'false';
+    btnTextEl.textContent = `Show All ${allResults.length} Results`;
+  } else {
+    // Expand - show all results
+    resultsEl.innerHTML = allResults.map(r => `<div class="result-row">
+      <span class="pos">P${r.position||'—'}</span>
+      <span class="name">${r.driver}${r.owner ? `<span class="owner">(${r.owner})</span>` : ''}</span>
+      <span class="pts">+${r.points}</span>
+    </div>`).join('');
+    resultsEl.dataset.expanded = 'true';
+    btnTextEl.textContent = 'Show Less';
+  }
+}
+
+function renderUpcoming() {
+  const el = document.getElementById('upcomingRaces');
+  if (!CALENDAR || !CALENDAR.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:.875rem">No upcoming races.</div>';
+    document.getElementById('upcomingPagination').style.display = 'none';
+    return;
+  }
+
+  // Filter upcoming races
+  const upcomingRaces = CALENDAR.filter(r => r.is_upcoming);
+  
+  if (!upcomingRaces.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:.875rem">No upcoming races scheduled.</div>';
+    document.getElementById('upcomingPagination').style.display = 'none';
+    return;
+  }
+
+  const totalPages = Math.ceil(upcomingRaces.length / UPCOMING_PER_PAGE);
+  
+  // Ensure current page is valid
+  if (upcomingPage > totalPages) upcomingPage = totalPages;
+  if (upcomingPage < 1) upcomingPage = 1;
+
+  // Get races for current page
+  const startIdx = (upcomingPage - 1) * UPCOMING_PER_PAGE;
+  const endIdx = startIdx + UPCOMING_PER_PAGE;
+  const racesToShow = upcomingRaces.slice(startIdx, endIdx);
+
+  el.innerHTML = racesToShow.map(race => {
+    // Format date
+    const raceDate = new Date(race.date);
+    const dateStr = raceDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    
+    // Format sessions with times
+    const sessionsHtml = race.sessions && race.sessions.length > 0
+      ? race.sessions.map(s => {
+          let timeStr = '';
+          if (s.time) {
+            try {
+              const sessionDate = new Date(s.time);
+              timeStr = sessionDate.toLocaleString('en-US', { 
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              });
+            } catch (e) {
+              timeStr = 'TBA';
+            }
+          } else {
+            timeStr = 'TBA';
+          }
+          
+          return `<div class="upcoming-session-item">
+            <div class="upcoming-session-name">${s.name}</div>
+            <div class="upcoming-session-time">${timeStr}</div>
+          </div>`;
+        }).join('')
+      : '<div style="color:var(--muted);font-size:.875rem;padding:1rem;text-align:center">Session times TBA</div>';
+
+    const sprintBadge = race.sprint ? '<span style="background:var(--gold-light);color:var(--gold);padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;text-transform:uppercase">Sprint</span>' : '';
+
+    return `<div class="upcoming-race-card">
+      <div class="upcoming-race-header">
+        <div class="upcoming-race-flag">${race.country_flag || '🏁'}</div>
+        <div class="upcoming-race-info">
+          <div class="upcoming-race-name">${race.name}</div>
+          <div class="upcoming-race-meta">
+            <span class="upcoming-race-date">${dateStr}</span>
+            <span>Round ${race.round} • ${race.half}</span>
+            ${sprintBadge}
+            <span>${race.circuit}</span>
+          </div>
+        </div>
+      </div>
+      <div class="upcoming-sessions">${sessionsHtml}</div>
+    </div>`;
+  }).join('');
+
+  // Update pagination controls
+  const paginationEl = document.getElementById('upcomingPagination');
+  const paginationInfo = document.getElementById('upcomingPaginationInfo');
+  const btnPrev = document.getElementById('btnPrevUpcoming');
+  const btnNext = document.getElementById('btnNextUpcoming');
+
+  if (totalPages > 1) {
+    paginationEl.style.display = 'flex';
+    paginationInfo.textContent = `Page ${upcomingPage} of ${totalPages}`;
+    btnPrev.disabled = upcomingPage === 1;
+    btnNext.disabled = upcomingPage === totalPages;
+  } else {
+    paginationEl.style.display = 'none';
+  }
+}
+
+function changeUpcomingPage(direction) {
+  upcomingPage += direction;
+  renderUpcoming();
+  // Scroll to top of upcoming races section
+  document.getElementById('upcomingRaces').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Half tabs
+document.querySelectorAll('.half-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.half-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentHalf = tab.dataset.half;
+    showBothHalves = false;
+    updateToggleButton();
+    if (DATA) {
+      renderCards(DATA.leaderboard);
+      renderTable(DATA.leaderboard);
+    }
+  });
+});
+
+function toggleBothHalves() {
+  showBothHalves = !showBothHalves;
+  updateToggleButton();
+  if (DATA) {
+    renderCards(DATA.leaderboard);
+    renderTable(DATA.leaderboard);
+  }
+}
+
+function updateToggleButton() {
+  const btn = document.getElementById('btnToggleHalves');
+  const hasH2 = DATA && DATA.has_h2_draft;
+  if (currentHalf === 'total' && hasH2) {
+    btn.style.display = 'inline-block';
+    btn.textContent = showBothHalves ? '◂ Show current half' : 'Show both halves ▸';
+    btn.style.background = showBothHalves ? 'var(--red)' : 'var(--surface2)';
+    btn.style.color = showBothHalves ? '#fff' : 'var(--text)';
+    btn.style.borderColor = showBothHalves ? 'var(--red)' : 'var(--muted)';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+// Sync
+document.getElementById('btnSync').addEventListener('click', async () => {
+  const btn = document.getElementById('btnSync');
+  btn.disabled = true; btn.textContent = '⏳ Syncing...';
+  try {
+    await fetch('/api/sync', { method: 'POST' });
+    showToast('✅ Sync complete!');
+    await load();
+  } catch(e) { showToast('❌ Sync failed'); }
+  btn.disabled = false; btn.textContent = '↻ Sync';
+});
+
+// Share
+document.getElementById('btnShare').addEventListener('click', async () => {
+  try {
+    const r = await fetch('/api/share-text');
+    const d = await r.json();
+    await navigator.clipboard.writeText(d.text);
+    showToast('📋 Copied to clipboard!');
+  } catch(e) { showToast('❌ Failed to copy'); }
+});
+
+// Rules Modal
+document.getElementById('btnRules').addEventListener('click', () => {
+  document.getElementById('rulesModal').classList.add('show');
+});
+
+function closeRulesModal() {
+  document.getElementById('rulesModal').classList.remove('show');
+}
+
+// Close modal when clicking outside
+document.getElementById('rulesModal').addEventListener('click', (e) => {
+  if (e.target.id === 'rulesModal') {
+    closeRulesModal();
+  }
+});
+
+// Driver Standings Modal
+document.getElementById('btnDriverStandings').addEventListener('click', async () => {
+  const modal = document.getElementById('driverStandingsModal');
+  modal.classList.add('show');
+  
+  try {
+    const response = await fetch('/api/standings');
+    const standings = await response.json();
+    
+    document.getElementById('driverStandingsInfo').textContent = 
+      `Based on ${standings.races_counted} race${standings.races_counted !== 1 ? 's' : ''}`;
+    
+    const tbody = document.getElementById('driverStandingsBody');
+    tbody.innerHTML = '';
+    
+    standings.drivers.forEach(driver => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td class="pos">${driver.position}</td>
+        <td>
+          <div class="driver-cell">
+            <span class="driver-flag">${driver.country_flag}</span>
+            <span class="driver-name">${driver.driver}</span>
+          </div>
+        </td>
+        <td>
+          <div class="team-cell">
+            <div class="team-badge" style="background:#${driver.team_color}"></div>
+            <span>${driver.team}</span>
+          </div>
+        </td>
+        <td class="points">${driver.points}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch(e) {
+    console.error('Failed to load driver standings:', e);
+    showToast('❌ Failed to load standings');
+  }
+});
+
+function closeDriverStandingsModal() {
+  document.getElementById('driverStandingsModal').classList.remove('show');
+}
+
+document.getElementById('driverStandingsModal').addEventListener('click', (e) => {
+  if (e.target.id === 'driverStandingsModal') {
+    closeDriverStandingsModal();
+  }
+});
+
+// Constructor Standings Modal
+document.getElementById('btnConstructorStandings').addEventListener('click', async () => {
+  const modal = document.getElementById('constructorStandingsModal');
+  modal.classList.add('show');
+  
+  try {
+    const response = await fetch('/api/standings');
+    const standings = await response.json();
+    
+    document.getElementById('constructorStandingsInfo').textContent = 
+      `Based on ${standings.races_counted} race${standings.races_counted !== 1 ? 's' : ''}`;
+    
+    const tbody = document.getElementById('constructorStandingsBody');
+    tbody.innerHTML = '';
+    
+    standings.constructors.forEach(team => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td class="pos">${team.position}</td>
+        <td>
+          <div class="team-cell">
+            <div class="team-badge" style="background:#${team.team_color}"></div>
+            <span style="font-weight:700">${team.team}</span>
+          </div>
+        </td>
+        <td class="points">${team.points}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch(e) {
+    console.error('Failed to load constructor standings:', e);
+    showToast('❌ Failed to load standings');
+  }
+});
+
+function closeConstructorStandingsModal() {
+  document.getElementById('constructorStandingsModal').classList.remove('show');
+}
+
+document.getElementById('constructorStandingsModal').addEventListener('click', (e) => {
+  if (e.target.id === 'constructorStandingsModal') {
+    closeConstructorStandingsModal();
+  }
+});
+
+// Driver Detail Modal
+function openDriverDetailModal(driverNumber) {
+  const modal = document.getElementById('driverDetailModal');
+  modal.classList.add('show');
+  
+  // Find driver info from DATA
+  let driverInfo = null;
+  for (const player of DATA.leaderboard) {
+    const allDrivers = [...(player.drivers_h1 || []), ...(player.drivers_h2 || [])];
+    driverInfo = allDrivers.find(d => d.number === driverNumber);
+    if (driverInfo) break;
+  }
+  
+  if (!driverInfo) {
+    console.error('Driver not found:', driverNumber);
+    return;
+  }
+  
+  // Populate header
+  const teamColor = driverInfo.team_color || '888888';
+  const headshotUrl = driverInfo.headshot_url || '';
+  const flag = driverInfo.country_flag || '';
+  const lastName = driverInfo.name ? driverInfo.name.split(' ').pop() : '';
+  const firstName = driverInfo.name ? driverInfo.name.split(' ')[0] : '';
+  const initials = (firstName[0] || '') + (lastName[0] || '');
+  const driverNum = driverInfo.number || driverNumber || '?';
+  
+  const photoHtml = headshotUrl 
+    ? `<img class="driver-detail-photo" src="${headshotUrl}" alt="${driverInfo.name}" style="border-color:#${teamColor}" onerror="this.outerHTML='<div class=\\'driver-detail-photo\\' style=\\'background:#${teamColor};border-color:#${teamColor};display:flex;align-items:center;justify-content:center;color:#fff;font-size:2.5rem;font-weight:800\\'>${initials}</div>'">`
+    : `<div class="driver-detail-photo" style="background:#${teamColor};border-color:#${teamColor};display:flex;align-items:center;justify-content:center;color:#fff;font-size:2.5rem;font-weight:800">${initials}</div>`;
+  
+  document.getElementById('driverDetailHeader').innerHTML = `
+    ${photoHtml}
+    <div class="driver-detail-info">
+      <div class="driver-detail-name">
+        <span>${flag} ${firstName} <strong>${lastName}</strong></span>
+        <div class="driver-detail-number" style="background:#${teamColor}">#${driverNum}</div>
+      </div>
+      <div class="driver-detail-meta">
+        <div class="driver-detail-meta-item">
+          <span>Team:</span>
+          <strong>${driverInfo.team || 'Unknown'}</strong>
+        </div>
+        <div class="driver-detail-meta-item">
+          <span>Total Points:</span>
+          <strong style="color:var(--red)">${driverInfo.points}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Get race results for this driver
+  const raceResults = [];
+  const sessions = DATA.recent_sessions || [];
+  
+  console.log('Driver:', driverInfo.name, 'Number:', driverNumber);
+  console.log('Total sessions:', sessions.length);
+  
+  // Group sessions by grand prix
+  const raceMap = new Map();
+  sessions.forEach(s => {
+    const key = s.grand_prix + '_' + s.round;
+    if (!raceMap.has(key)) {
+      raceMap.set(key, {
+        grand_prix: s.grand_prix,
+        round: s.round,
+        date: s.date,
+        country_flag: s.country_flag,
+        quali: null,
+        race: null,
+        points: 0
+      });
+    }
+    const race = raceMap.get(key);
+    
+    // Find driver's result in this session - match by name (handle case variations)
+    const driverNameLower = driverInfo.name.toLowerCase();
+    const result = s.results?.find(r => r.driver.toLowerCase() === driverNameLower);
+    if (result) {
+      console.log('Found result for', driverInfo.name, 'in', s.grand_prix, s.session_type, '- Position:', result.position, 'Points:', result.points);
+      if (s.session_type === 'qualifying') {
+        race.quali = result.position || (result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : '-')));
+      } else if (s.session_type === 'race') {
+        race.race = result.position || (result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : '-')));
+        race.points = result.points || 0;
+      }
+    }
+  });
+  
+  // Convert to array and sort by round descending
+  const results = Array.from(raceMap.values()).sort((a, b) => b.round - a.round);
+  console.log('Final results:', results);
+  
+  // Store results for pagination
+  driverResultsData = results;
+  driverResultsPage = 1;
+  
+  // Render first page
+  renderDriverResults();
+}
+
+function renderDriverResults() {
+  const results = driverResultsData;
+  const totalPages = Math.ceil(results.length / DRIVER_RESULTS_PER_PAGE);
+  const startIdx = (driverResultsPage - 1) * DRIVER_RESULTS_PER_PAGE;
+  const endIdx = startIdx + DRIVER_RESULTS_PER_PAGE;
+  const pageResults = results.slice(startIdx, endIdx);
+  
+  // Populate results table
+  const tbody = document.getElementById('driverDetailResults');
+  if (results.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No race results yet</td></tr>';
+    document.getElementById('driverResultsPagination').style.display = 'none';
+  } else {
+    tbody.innerHTML = pageResults.map(r => `
+      <tr>
+        <td class="race-name">${r.country_flag} ${r.grand_prix}</td>
+        <td>${new Date(r.date).toLocaleDateString()}</td>
+        <td style="text-align:center">
+          <span class="position ${typeof r.quali === 'string' && r.quali !== '-' ? 'dnf' : ''}">${r.quali !== null ? (r.quali === '-' ? '—' : (typeof r.quali === 'number' ? 'P' + r.quali : r.quali)) : '—'}</span>
+        </td>
+        <td style="text-align:center">
+          <span class="position ${typeof r.race === 'string' && r.race !== '-' ? 'dnf' : ''}">${r.race !== null ? (r.race === '-' ? '—' : (typeof r.race === 'number' ? 'P' + r.race : r.race)) : '—'}</span>
+        </td>
+        <td style="text-align:center">
+          <span class="points">${r.points > 0 ? '+' + r.points : (r.points === 0 ? '0' : '—')}</span>
+        </td>
+      </tr>
+    `).join('');
+    
+    // Update pagination controls
+    if (totalPages > 1) {
+      document.getElementById('driverResultsPagination').style.display = 'flex';
+      document.getElementById('driverResultsPageInfo').textContent = `Page ${driverResultsPage} of ${totalPages}`;
+      document.getElementById('btnDriverResultsPrev').disabled = driverResultsPage === 1;
+      document.getElementById('btnDriverResultsNext').disabled = driverResultsPage === totalPages;
+    } else {
+      document.getElementById('driverResultsPagination').style.display = 'none';
+    }
+  }
+}
+
+function changeDriverResultsPage(delta) {
+  const totalPages = Math.ceil(driverResultsData.length / DRIVER_RESULTS_PER_PAGE);
+  driverResultsPage = Math.max(1, Math.min(totalPages, driverResultsPage + delta));
+  renderDriverResults();
+  // Scroll to top of table
+  document.querySelector('.driver-results-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeDriverDetailModal() {
+  document.getElementById('driverDetailModal').classList.remove('show');
+}
+
+document.getElementById('driverDetailModal').addEventListener('click', (e) => {
+  if (e.target.id === 'driverDetailModal') {
+    closeDriverDetailModal();
+  }
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>
+

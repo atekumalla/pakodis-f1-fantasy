@@ -1,0 +1,178 @@
+{
+  "status": "completed",
+  "player_names": [
+    "Anup",
+    "Rohit",
+    "Abhinav",
+    "Prateik"
+  ],
+  "base_order": [
+    "Prateik",
+    "Abhinav",
+    "Rohit",
+    "Anup"
+  ],
+  "pick_order": [
+    "Prateik",
+    "Abhinav",
+    "Rohit",
+    "Anup",
+    "Anup",
+    "Rohit",
+    "Abhinav",
+    "Prateik",
+    "Prateik",
+    "Abhinav",
+    "Rohit",
+    "Anup",
+    "Anup",
+    "Rohit",
+    "Abhinav",
+    "Prateik",
+    "Prateik",
+    "Abhinav",
+    "Rohit",
+    "Anup",
+    "Anup",
+    "Rohit"
+  ],
+  "picks": [
+    {
+      "pick_number": 1,
+      "player_name": "Prateik",
+      "driver_name": "Max Verstappen",
+      "timestamp": "2026-07-01T05:30:29.738126+00:00"
+    },
+    {
+      "pick_number": 2,
+      "player_name": "Abhinav",
+      "driver_name": "Kimi Antonelli",
+      "timestamp": "2026-07-01T05:30:29.738779+00:00"
+    },
+    {
+      "pick_number": 3,
+      "player_name": "Rohit",
+      "driver_name": "Lewis Hamilton",
+      "timestamp": "2026-07-01T05:30:29.739380+00:00"
+    },
+    {
+      "pick_number": 4,
+      "player_name": "Anup",
+      "driver_name": "Lando Norris",
+      "timestamp": "2026-07-01T05:30:29.743936+00:00"
+    },
+    {
+      "pick_number": 5,
+      "player_name": "Anup",
+      "driver_name": "Franco Colapinto",
+      "timestamp": "2026-07-01T05:30:29.744510+00:00"
+    },
+    {
+      "pick_number": 6,
+      "player_name": "Rohit",
+      "driver_name": "Lance Stroll",
+      "timestamp": "2026-07-01T05:30:29.745102+00:00"
+    },
+    {
+      "pick_number": 7,
+      "player_name": "Abhinav",
+      "driver_name": "Esteban Ocon",
+      "timestamp": "2026-07-01T05:30:29.746134+00:00"
+    },
+    {
+      "pick_number": 8,
+      "player_name": "Prateik",
+      "driver_name": "Oscar Piastri",
+      "timestamp": "2026-07-01T05:30:29.748046+00:00"
+    },
+    {
+      "pick_number": 9,
+      "player_name": "Prateik",
+      "driver_name": "Alex Albon",
+      "timestamp": "2026-07-01T05:30:29.748755+00:00"
+    },
+    {
+      "pick_number": 10,
+      "player_name": "Abhinav",
+      "driver_name": "Pierre Gasly",
+      "timestamp": "2026-07-01T05:30:29.750832+00:00"
+    },
+    {
+      "pick_number": 11,
+      "player_name": "Rohit",
+      "driver_name": "Fernando Alonso",
+      "timestamp": "2026-07-01T05:30:29.754507+00:00"
+    },
+    {
+      "pick_number": 12,
+      "player_name": "Anup",
+      "driver_name": "Nico Hulkenberg",
+      "timestamp": "2026-07-01T05:30:29.757589+00:00"
+    },
+    {
+      "pick_number": 13,
+      "player_name": "Anup",
+      "driver_name": "Sergio Perez",
+      "timestamp": "2026-07-01T05:30:29.758966+00:00"
+    },
+    {
+      "pick_number": 14,
+      "player_name": "Rohit",
+      "driver_name": "Oliver Bearman",
+      "timestamp": "2026-07-01T05:30:29.760286+00:00"
+    },
+    {
+      "pick_number": 15,
+      "player_name": "Abhinav",
+      "driver_name": "Valtteri Bottas",
+      "timestamp": "2026-07-01T05:30:29.762061+00:00"
+    },
+    {
+      "pick_number": 16,
+      "player_name": "Prateik",
+      "driver_name": "Isack Hadjar",
+      "timestamp": "2026-07-01T05:30:29.762825+00:00"
+    },
+    {
+      "pick_number": 17,
+      "player_name": "Prateik",
+      "driver_name": "Carlos Sainz",
+      "timestamp": "2026-07-01T05:30:29.763379+00:00"
+    },
+    {
+      "pick_number": 18,
+      "player_name": "Abhinav",
+      "driver_name": "Gabriel Bortoleto",
+      "timestamp": "2026-07-01T05:30:29.763896+00:00"
+    },
+    {
+      "pick_number": 19,
+      "player_name": "Rohit",
+      "driver_name": "Liam Lawson",
+      "timestamp": "2026-07-01T05:30:29.766757+00:00"
+    },
+    {
+      "pick_number": 20,
+      "player_name": "Anup",
+      "driver_name": "Charles Leclerc",
+      "timestamp": "2026-07-01T05:30:29.769603+00:00"
+    },
+    {
+      "pick_number": 21,
+      "player_name": "Anup",
+      "driver_name": "George Russell",
+      "timestamp": "2026-07-01T05:30:29.774012+00:00"
+    },
+    {
+      "pick_number": 22,
+      "player_name": "Rohit",
+      "driver_name": "Arvid Lindblad",
+      "timestamp": "2026-07-01T05:30:29.774744+00:00"
+    }
+  ],
+  "available_drivers": [],
+  "current_pick_index": 22,
+  "total_picks": 22,
+  "created_at": "2026-07-01T05:30:29.736796+00:00",
+  "completed_at": "2026-07-01T05:30:29.774774+00:00"
+}

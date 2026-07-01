@@ -1,0 +1,35 @@
+# Environment & Secrets
+.env
+credentials.json
+*.json.key
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# State (local only — Render uses /tmp)
+state/last_sync.json
+state/draft_state.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# pytest
+.pytest_cache/
+
+# Reference project
+reference/
