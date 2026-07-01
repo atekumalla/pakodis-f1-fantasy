@@ -325,24 +325,29 @@ class OpenF1API:
         self, 
         year: int | None = None,
         exclude_keys: set[int] | None = None,
+        exclude_identities: set[tuple] | None = None,
     ) -> list[Session]:
         """
         Fetch only NEW sessions that aren't already known.
         
         This is an optimized version of fetch_all_scored_sessions that:
-        1. Skips sessions we already have (by session_key)
+        1. Skips sessions we already have (by session_key OR round+type identity)
         2. Only fetches results for new finished sessions
         3. Minimizes API calls
         
         Args:
             year: Season year
             exclude_keys: Set of session_keys to skip (already have data for)
+            exclude_identities: Set of (round_number, session_type_value) tuples to skip.
+                This handles the case where sessions loaded from sheets have synthetic keys
+                that don't match real API keys.
             
         Returns:
             List of new Session objects only
         """
         year = year or Config.F1_SEASON_YEAR
         exclude_keys = exclude_keys or set()
+        exclude_identities = exclude_identities or set()
         
         meetings = self.fetch_season_meetings(year)
         
@@ -368,6 +373,15 @@ class OpenF1API:
                 continue
             
             round_number += 1
+            
+            # Quick check: if we already have qualifying + race for this round,
+            # skip the entire meeting (saves an API call)
+            known_types_for_round = {
+                st for (rn, st) in exclude_identities if rn == round_number
+            }
+            if "qualifying" in known_types_for_round and "race" in known_types_for_round:
+                logger.debug(f"Skipping {gp_name} — already have qualifying + race")
+                continue
 
             try:
                 raw_sessions = self.fetch_sessions(meeting_key)
@@ -389,8 +403,13 @@ class OpenF1API:
                 if not session_key:
                     continue
                     
-                # Skip if we already have this session
+                # Skip if we already have this session (by real API key)
                 if session_key in exclude_keys:
+                    continue
+                
+                # Skip if we already have this session (by round+type identity)
+                # This catches sessions loaded from sheets with synthetic keys
+                if (round_number, session_type.value) in exclude_identities:
                     continue
 
                 # Determine status

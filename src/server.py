@@ -820,11 +820,15 @@ def _do_sync(state: dict):
                 f"{len(real_api_keys)} real API keys, {len(scored_keys)} scored")
 
     try:
-        # Fetch only NEW sessions from API (sessions not in our known set)
-        new_sessions = openf1.fetch_new_sessions(exclude_keys=known_keys)
+        # Fetch only NEW sessions from API
+        # Pass both real API keys AND (round, type) identities to skip
+        # This prevents expensive API calls for sessions we already have from sheets
+        new_sessions = openf1.fetch_new_sessions(
+            exclude_keys=known_keys,
+            exclude_identities=existing_identities,
+        )
         
-        # ALSO filter out sessions we already have by (round_number, session_type)
-        # This catches cases where sheets have synthetic keys that don't match API keys
+        # Double-check: filter out any that slipped through
         truly_new = [
             s for s in new_sessions 
             if (s.round_number, s.session_type.value) not in existing_identities
