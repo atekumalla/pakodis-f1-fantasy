@@ -838,8 +838,13 @@ def _do_sync(state: dict):
                 logger.warning(f"Failed to update leaderboard: {e}")
         return
 
-    # Merge new sessions with existing
-    all_sessions = existing_sessions + new_sessions
+    # Merge new sessions with existing, deduplicating by session_key
+    # New sessions take precedence over existing ones (fresher data)
+    session_map = {s.session_key: s for s in existing_sessions}
+    for s in new_sessions:
+        session_map[s.session_key] = s  # Overwrite if exists
+    
+    all_sessions = sorted(session_map.values(), key=lambda s: (s.session_date, s.session_type.value))
     state["sessions"] = all_sessions
 
     # Write ALL results to sheets (this overwrites, ensuring consistency)
