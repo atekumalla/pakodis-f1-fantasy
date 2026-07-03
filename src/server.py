@@ -29,11 +29,12 @@ from __future__ import annotations
 
 import logging
 import os
+import hmac
 from contextlib import asynccontextmanager
 from datetime import date as dt_date, timedelta
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -71,7 +72,10 @@ async def lifespan(app: FastAPI):
 
     logger.info("Starting F1 2026 Fantasy Draft server...")
 
-    rate_limiter.cooldown_seconds = Config.SYNC_COOLDOWN_SECONDS
+    # Separate cooldowns: snappy for the cheap incremental sync, long for the
+    # expensive force sync.
+    rate_limiter.set_cooldown("sync", Config.SYNC_COOLDOWN_SECONDS)
+    rate_limiter.set_cooldown("force_sync", Config.SYNC_FORCE_COOLDOWN_SECONDS)
 
     state = {
         "sheets_client": None,
@@ -248,6 +252,8 @@ async def get_status():
 
     sync_ready = rate_limiter.can_call("sync")
     sync_wait = rate_limiter.seconds_until_ready("sync")
+    force_sync_ready = rate_limiter.can_call("force_sync")
+    force_sync_wait = rate_limiter.seconds_until_ready("force_sync")
 
     # Determine which half is currently active based on date
     from src.seed_data import CALENDAR_2026, get_halfway_round
@@ -283,6 +289,8 @@ async def get_status():
         "active_half": active_half,
         "sync_available": sync_ready,
         "sync_wait_seconds": sync_wait,
+        "force_sync_available": force_sync_ready,
+        "force_sync_wait_seconds": force_sync_wait,
         "spreadsheet_url": (
             f"https://docs.google.com/spreadsheets/d/{Config.GOOGLE_SHEETS_ID}"
             if Config.GOOGLE_SHEETS_ID else None
@@ -291,6 +299,23 @@ async def get_status():
 
 
 # ─── API: SYNC ───────────────────────────────────────────────────────────────
+
+def _require_admin(token: str | None):
+    """Authorize an admin-only action using the shared ADMIN_PASSWORD.
+
+    If no ADMIN_PASSWORD is configured, the action is allowed (convenient for
+    local dev); a warning is logged. When configured, a matching token must be
+    supplied via the ``X-Admin-Token`` header.
+    """
+    expected = Config.ADMIN_PASSWORD
+    if not expected:
+        logger.warning(
+            "Admin action allowed without a password — set ADMIN_PASSWORD to protect it."
+        )
+        return
+    if not token or not hmac.compare_digest(token, expected):
+        raise HTTPException(401, "Invalid or missing admin password.")
+
 
 @app.post("/api/sync")
 async def trigger_sync():
@@ -307,12 +332,15 @@ async def trigger_sync():
 
 
 @app.post("/api/sync/force")
-async def trigger_force_sync():
+async def trigger_force_sync(x_admin_token: str | None = Header(default=None)):
     """Force a full sync - re-fetches ALL sessions from API.
     
     Use this sparingly - it will re-fetch all historical data.
     Useful for recovery or when sheets data is corrupted.
+
+    Protected by ADMIN_PASSWORD (sent via the ``X-Admin-Token`` header).
     """
+    _require_admin(x_admin_token)
     allowed, wait = rate_limiter.try_call("force_sync")
     if not allowed:
         raise HTTPException(429, f"Rate limited. Try again in {wait} seconds.")

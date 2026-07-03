@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: pakodis-f1-fantasy
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: GOOGLE_SHEETS_ID
+        sync: false
+      - key: GOOGLE_SHEETS_CREDENTIALS_JSON
+        sync: false
+      - key: F1_SEASON_YEAR
+        value: 2026
+      - key: SYNC_INTERVAL_MINUTES
+        value: 60
+      - key: SYNC_LIVE_INTERVAL_SECONDS
+        value: 120
+      - key: SYNC_TIMEZONE
+        value: Asia/Kolkata
+      - key: HALFWAY_ROUND
+        value: 12
+      - key: SYNC_COOLDOWN_SECONDS
+        value: 90
+      - key: SYNC_FORCE_COOLDOWN_SECONDS
+        value: 600
+      # Password for admin-only Force Sync. Set this in the Render dashboard.
+      - key: ADMIN_PASSWORD
+        sync: false

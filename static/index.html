@@ -184,7 +184,9 @@ tbody tr:hover{background:var(--surface2)}
     <button class="btn btn-sec" id="btnRules">📋 Rules</button>
     <button class="btn btn-sec" id="btnDriverStandings">🏎️ Drivers</button>
     <button class="btn btn-sec" id="btnConstructorStandings">🏁 Constructors</button>
-    <button class="btn btn-red" id="btnSync">↻ Sync</button>
+    <button class="btn btn-red" id="btnSync" title="Fetch NEW finished results from OpenF1 and add them to the sheet. Use this after a session ends.">↻ Sync</button>
+    <button class="btn btn-sec" id="btnForceSync" style="display:none" title="Admin: re-fetch ALL sessions and OVERWRITE the sheet. Only needed if a scored result changed (penalty/DSQ) or the sheet is broken.">⟳ Force</button>
+    <button class="btn btn-sec" id="btnSyncInfo" style="display:none" title="What's the difference between Sync and Force Sync?">ⓘ</button>
     <button class="btn btn-share" id="btnShare">📱 Share</button>
     <a class="btn btn-sec" id="btnSheet" href="#" target="_blank">📊 Sheet</a>
   </div>
@@ -346,6 +348,44 @@ tbody tr:hover{background:var(--surface2)}
         <strong>DNF (Did Not Finish):</strong> 0 points<br>
         <strong>DNS (Did Not Start):</strong> 0 points<br>
         <strong>DSQ (Disqualified):</strong> 0 points
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sync Info Modal -->
+<div class="modal" id="syncInfoModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">🔄 Sync vs Force Sync</h2>
+      <button class="modal-close" onclick="closeSyncInfoModal()">×</button>
+    </div>
+
+    <div class="rules-section">
+      <table class="rules-table">
+        <thead>
+          <tr><th></th><th>↻ Sync</th><th>⟳ Force Sync</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>What it does</td><td>Fetches only <strong>new</strong> finished sessions and adds them to the sheet.</td><td>Re-fetches <strong>every</strong> session and <strong>overwrites</strong> the whole sheet.</td></tr>
+          <tr><td>Speed</td><td>Fast — seconds (~1 API call when nothing's new).</td><td>Slow — 2–3 minutes (~70+ API calls).</td></tr>
+          <tr><td>When to use</td><td>After a session finishes (≈30 min post-race) to pull in fresh results.</td><td>Only if an already-scored result changed (penalty / DSQ) or the sheet got corrupted.</td></tr>
+          <tr><td>Who</td><td>Anyone</td><td>Admin only (password)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rules-section">
+      <h3 class="rules-section-title">💡 Rule of thumb</h3>
+      <div class="rules-note">
+        Use <strong>↻ Sync</strong> almost every time. Only reach for <strong>⟳ Force Sync</strong> when a past result changed <em>after</em> it was already recorded, or to rebuild a broken sheet.
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <h3 class="rules-section-title">🛡️ API rate-limit safety</h3>
+      <div class="rules-note">
+        Both syncs share one throttled connection to OpenF1: requests are spaced ~2.1s apart (~28/min, just under OpenF1's 30/min free-tier cap) and automatically back off (30/60/90s) if the API ever pushes back. That throttling is exactly why a Force Sync takes 2–3 minutes — it stays safely within the limit. A cooldown (Sync: 90s, Force: 10 min) also prevents runs from stacking up.
       </div>
     </div>
   </div>
@@ -1048,12 +1088,82 @@ document.getElementById('btnSync').addEventListener('click', async () => {
   const btn = document.getElementById('btnSync');
   btn.disabled = true; btn.textContent = '⏳ Syncing...';
   try {
-    await fetch('/api/sync', { method: 'POST' });
-    showToast('✅ Sync complete!');
-    await load();
+    const resp = await fetch('/api/sync', { method: 'POST' });
+    if (resp.ok) {
+      showToast('✅ Sync complete!');
+      await load();
+    } else if (resp.status === 429) {
+      const d = await resp.json().catch(() => ({}));
+      showToast(`⏳ ${d.detail || 'Synced recently — try again shortly.'}`);
+    } else {
+      showToast('❌ Sync failed');
+    }
   } catch(e) { showToast('❌ Sync failed'); }
   btn.disabled = false; btn.textContent = '↻ Sync';
 });
+
+// Force Sync (admin-only — reveal by adding ?admin=1 to the URL).
+// Re-fetches ALL sessions and overwrites the sheet; use for post-race
+// penalty/DSQ corrections or to rebuild a corrupted sheet.
+// Authorized with an admin password (sent as the X-Admin-Token header).
+(function setupForceSync() {
+  const btn = document.getElementById('btnForceSync');
+  if (!btn) return;
+  const isAdmin = /(^|[?&#])admin=1(&|$)/.test(location.search) || location.hash.includes('admin');
+  if (!isAdmin) return;
+  btn.style.display = '';
+
+  // Reveal + wire the "ⓘ" info button that explains Sync vs Force Sync.
+  const infoBtn = document.getElementById('btnSyncInfo');
+  if (infoBtn) {
+    infoBtn.style.display = '';
+    infoBtn.addEventListener('click', () => {
+      document.getElementById('syncInfoModal').classList.add('show');
+    });
+  }
+
+  function getAdminToken(forcePrompt) {
+    let t = forcePrompt ? null : localStorage.getItem('adminToken');
+    if (!t) {
+      t = prompt('Enter admin password to force sync:');
+      if (t) localStorage.setItem('adminToken', t);
+    }
+    return t;
+  }
+
+  btn.addEventListener('click', async () => {
+    if (!confirm(
+      '⟳ FORCE SYNC\n\n' +
+      'Re-fetches EVERY session from OpenF1 and OVERWRITES the entire sheet. ' +
+      'Takes 2–3 minutes.\n\n' +
+      'You almost always want the normal "↻ Sync" instead. Only use Force Sync ' +
+      'if an already-recorded result changed (penalty/DSQ) or the sheet is broken.\n\n' +
+      'Continue?'
+    )) return;
+    const token = getAdminToken(false);
+    if (!token) return;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ Force syncing…';
+    try {
+      const resp = await fetch('/api/sync/force', {
+        method: 'POST',
+        headers: { 'X-Admin-Token': token },
+      });
+      if (resp.ok) {
+        showToast('✅ Force sync complete!');
+        await load();
+      } else if (resp.status === 401) {
+        localStorage.removeItem('adminToken');
+        showToast('🔒 Wrong admin password — try again.');
+      } else if (resp.status === 429) {
+        const d = await resp.json().catch(() => ({}));
+        showToast(`⏳ ${d.detail || 'Force synced recently — try again later.'}`);
+      } else {
+        showToast('❌ Force sync failed');
+      }
+    } catch(e) { showToast('❌ Force sync failed'); }
+    btn.disabled = false; btn.textContent = orig;
+  });
+})();
 
 // Share
 document.getElementById('btnShare').addEventListener('click', async () => {
@@ -1074,10 +1184,21 @@ function closeRulesModal() {
   document.getElementById('rulesModal').classList.remove('show');
 }
 
+function closeSyncInfoModal() {
+  document.getElementById('syncInfoModal').classList.remove('show');
+}
+
 // Close modal when clicking outside
 document.getElementById('rulesModal').addEventListener('click', (e) => {
   if (e.target.id === 'rulesModal') {
     closeRulesModal();
+  }
+});
+
+// Close sync info modal when clicking outside
+document.getElementById('syncInfoModal').addEventListener('click', (e) => {
+  if (e.target.id === 'syncInfoModal') {
+    closeSyncInfoModal();
   }
 });
 

@@ -133,7 +133,18 @@ Click **"Add Environment Variable"** for each:
 
 #### 8. SYNC_COOLDOWN_SECONDS
 - **Key**: `SYNC_COOLDOWN_SECONDS`
-- **Value**: `600` (10 minutes between manual syncs)
+- **Value**: `90` (cooldown between manual **Sync** presses — the incremental sync is cheap)
+
+#### 9. SYNC_FORCE_COOLDOWN_SECONDS
+- **Key**: `SYNC_FORCE_COOLDOWN_SECONDS`
+- **Value**: `600` (10-minute cooldown for the expensive **Force Sync**, which re-fetches everything)
+
+#### 10. ADMIN_PASSWORD
+- **Key**: `ADMIN_PASSWORD`
+- **Value**: A strong password of your choice
+- 🔒 **Strongly recommended on any public deployment.** Required to trigger a **Force Sync** (which re-fetches all data and overwrites the sheet).
+- If left unset, Force Sync is allowed without a password (fine for local dev, risky when public).
+- **How to use it**: open the dashboard with `?admin=1` appended to the URL to reveal the **⟳ Force** button, then enter this password when prompted. See the in-app "ⓘ" info popup for a Sync vs Force Sync explainer.
 
 ---
 

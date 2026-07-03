@@ -53,6 +53,12 @@ class Config:
     # --- Logging ---
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
+    # --- Admin ---
+    # Shared password required to trigger a Force Sync via the API/UI.
+    # If left blank, force sync is allowed without a password (fine for local
+    # dev; set this on any public deployment).
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
+
     # --- Deployment ---
     PORT: int = int(os.getenv("PORT", "8000"))
 
@@ -63,7 +69,11 @@ class Config:
     DASHBOARD_URL: str = os.getenv("DASHBOARD_URL", "")
 
     # --- Rate Limiting ---
-    SYNC_COOLDOWN_SECONDS: int = int(os.getenv("SYNC_COOLDOWN_SECONDS", "600"))
+    # Cooldown between manual "Sync" presses. The incremental sync is cheap
+    # (~1 API call when nothing new), so this can be short and snappy.
+    SYNC_COOLDOWN_SECONDS: int = int(os.getenv("SYNC_COOLDOWN_SECONDS", "90"))
+    # Cooldown for the expensive "Force sync" (re-fetches everything, ~50+ calls).
+    SYNC_FORCE_COOLDOWN_SECONDS: int = int(os.getenv("SYNC_FORCE_COOLDOWN_SECONDS", "600"))
 
     @classmethod
     def has_credentials_json(cls) -> bool:
