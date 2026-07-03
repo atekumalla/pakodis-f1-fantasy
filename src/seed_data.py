@@ -194,19 +194,19 @@ CALENDAR_2026: list[dict] = [
     {"round": 7,  "name": "Emilia Romagna Grand Prix",  "circuit": "Autodromo Enzo e Dino Ferrari",  "country": "Italy",           "date": "2026-05-17", "sprint": False},
     {"round": 8,  "name": "Monaco Grand Prix",          "circuit": "Circuit de Monaco",              "country": "Monaco",          "date": "2026-05-24", "sprint": False},
     {"round": 9,  "name": "Spanish Grand Prix",         "circuit": "Circuit de Barcelona-Catalunya", "country": "Spain",           "date": "2026-06-07", "sprint": False},
-    {"round": 10, "name": "Canadian Grand Prix",        "circuit": "Circuit Gilles Villeneuve",      "country": "Canada",          "date": "2026-06-14", "sprint": False},
-    {"round": 11, "name": "Austrian Grand Prix",        "circuit": "Red Bull Ring",                  "country": "Austria",         "date": "2026-06-28", "sprint": True},
-    {"round": 12, "name": "British Grand Prix",         "circuit": "Silverstone Circuit",            "country": "United Kingdom",  "date": "2026-07-05", "sprint": False},
+    {"round": 10, "name": "Canadian Grand Prix",        "circuit": "Circuit Gilles Villeneuve",      "country": "Canada",          "date": "2026-06-14", "sprint": True},
+    {"round": 11, "name": "Austrian Grand Prix",        "circuit": "Red Bull Ring",                  "country": "Austria",         "date": "2026-06-28", "sprint": False},
+    {"round": 12, "name": "British Grand Prix",         "circuit": "Silverstone Circuit",            "country": "United Kingdom",  "date": "2026-07-05", "sprint": True},
     {"round": 13, "name": "Belgian Grand Prix",         "circuit": "Circuit de Spa-Francorchamps",   "country": "Belgium",         "date": "2026-07-19", "sprint": False},
     {"round": 14, "name": "Hungarian Grand Prix",       "circuit": "Hungaroring",                    "country": "Hungary",         "date": "2026-07-26", "sprint": False},
-    {"round": 15, "name": "Dutch Grand Prix",           "circuit": "Circuit Zandvoort",              "country": "Netherlands",     "date": "2026-08-23", "sprint": False},
+    {"round": 15, "name": "Dutch Grand Prix",           "circuit": "Circuit Zandvoort",              "country": "Netherlands",     "date": "2026-08-23", "sprint": True},
     {"round": 16, "name": "Italian Grand Prix",         "circuit": "Autodromo Nazionale Monza",      "country": "Italy",           "date": "2026-09-06", "sprint": False},
     {"round": 17, "name": "Spanish Grand Prix",         "circuit": "Madrid Street Circuit",          "country": "Spain",           "date": "2026-09-13", "sprint": False},
-    {"round": 18, "name": "Azerbaijan Grand Prix",      "circuit": "Baku City Circuit",              "country": "Azerbaijan",      "date": "2026-09-26", "sprint": True},
-    {"round": 19, "name": "Singapore Grand Prix",       "circuit": "Marina Bay Street Circuit",      "country": "Singapore",       "date": "2026-10-11", "sprint": False},
-    {"round": 20, "name": "United States Grand Prix",   "circuit": "Circuit of the Americas",        "country": "United States",   "date": "2026-10-25", "sprint": True},
+    {"round": 18, "name": "Azerbaijan Grand Prix",      "circuit": "Baku City Circuit",              "country": "Azerbaijan",      "date": "2026-09-26", "sprint": False},
+    {"round": 19, "name": "Singapore Grand Prix",       "circuit": "Marina Bay Street Circuit",      "country": "Singapore",       "date": "2026-10-11", "sprint": True},
+    {"round": 20, "name": "United States Grand Prix",   "circuit": "Circuit of the Americas",        "country": "United States",   "date": "2026-10-25", "sprint": False},
     {"round": 21, "name": "Mexico City Grand Prix",     "circuit": "Autodromo Hermanos Rodriguez",   "country": "Mexico",          "date": "2026-11-01", "sprint": False},
-    {"round": 22, "name": "São Paulo Grand Prix",       "circuit": "Autodromo Jose Carlos Pace",     "country": "Brazil",          "date": "2026-11-08", "sprint": True},
+    {"round": 22, "name": "São Paulo Grand Prix",       "circuit": "Autodromo Jose Carlos Pace",     "country": "Brazil",          "date": "2026-11-08", "sprint": False},
     {"round": 23, "name": "Las Vegas Grand Prix",       "circuit": "Las Vegas Strip Circuit",        "country": "United States",   "date": "2026-11-21", "sprint": False},
     {"round": 24, "name": "Qatar Grand Prix",           "circuit": "Lusail International Circuit",   "country": "Qatar",           "date": "2026-11-29", "sprint": False},
     {"round": 25, "name": "Abu Dhabi Grand Prix",       "circuit": "Yas Marina Circuit",             "country": "United Arab Emirates", "date": "2026-12-06", "sprint": False},
@@ -219,11 +219,11 @@ PRESEEDED_SESSION_TIMES = {
     "British Grand Prix": {
         "date": "2026-07-05",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "05:30"},  # Friday
-            {"name": "Practice 2", "day_offset": -2, "time": "09:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "05:30"},  # Saturday
-            {"name": "Qualifying", "day_offset": -1, "time": "09:00"},
-            {"name": "Race", "day_offset": 0, "time": "07:00"},  # Sunday (race day)
+            {"name": "Practice 1", "day_offset": -2, "time": "05:30"},       # Friday
+            {"name": "Sprint Shootout", "day_offset": -2, "time": "09:00"},  # Friday
+            {"name": "Sprint", "day_offset": -1, "time": "05:30"},           # Saturday
+            {"name": "Qualifying", "day_offset": -1, "time": "09:00"},       # Saturday
+            {"name": "Race", "day_offset": 0, "time": "07:00"},              # Sunday (race day)
         ]
     },
     "Belgian Grand Prix": {
@@ -249,11 +249,11 @@ PRESEEDED_SESSION_TIMES = {
     "Dutch Grand Prix": {
         "date": "2026-08-23",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "04:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "08:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "03:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "07:00"},
-            {"name": "Race", "day_offset": 0, "time": "06:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "04:30"},       # Friday
+            {"name": "Sprint Shootout", "day_offset": -2, "time": "08:00"},  # Friday
+            {"name": "Sprint", "day_offset": -1, "time": "03:30"},           # Saturday
+            {"name": "Qualifying", "day_offset": -1, "time": "07:00"},       # Saturday
+            {"name": "Race", "day_offset": 0, "time": "06:00"},              # Sunday
         ]
     },
     "Italian Grand Prix": {
@@ -280,29 +280,29 @@ PRESEEDED_SESSION_TIMES = {
         "date": "2026-09-26",
         "sessions": [
             {"name": "Practice 1", "day_offset": -2, "time": "04:30"},
-            {"name": "Sprint Shootout", "day_offset": -1, "time": "04:30"},
-            {"name": "Sprint", "day_offset": -1, "time": "08:30"},
-            {"name": "Qualifying", "day_offset": -2, "time": "08:00"},
+            {"name": "Practice 2", "day_offset": -2, "time": "08:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "04:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "08:00"},
             {"name": "Race", "day_offset": 0, "time": "04:00"},
         ]
     },
     "Singapore Grand Prix": {
         "date": "2026-10-11",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "01:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "05:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "01:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "05:00"},
-            {"name": "Race", "day_offset": 0, "time": "05:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "01:30"},       # Friday
+            {"name": "Sprint Shootout", "day_offset": -2, "time": "05:00"},  # Friday
+            {"name": "Sprint", "day_offset": -1, "time": "01:30"},           # Saturday
+            {"name": "Qualifying", "day_offset": -1, "time": "05:00"},       # Saturday
+            {"name": "Race", "day_offset": 0, "time": "05:00"},              # Sunday
         ]
     },
     "United States Grand Prix": {
         "date": "2026-10-25",
         "sessions": [
             {"name": "Practice 1", "day_offset": -2, "time": "10:30"},
-            {"name": "Sprint Shootout", "day_offset": -1, "time": "10:30"},
-            {"name": "Sprint", "day_offset": -1, "time": "14:00"},
-            {"name": "Qualifying", "day_offset": -2, "time": "14:00"},
+            {"name": "Practice 2", "day_offset": -2, "time": "14:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "10:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "14:00"},
             {"name": "Race", "day_offset": 0, "time": "13:00"},
         ]
     },
@@ -319,10 +319,10 @@ PRESEEDED_SESSION_TIMES = {
     "São Paulo Grand Prix": {
         "date": "2026-11-08",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "08:30"},
-            {"name": "Sprint Shootout", "day_offset": -1, "time": "05:30"},
-            {"name": "Sprint", "day_offset": -1, "time": "09:00"},
-            {"name": "Qualifying", "day_offset": -2, "time": "12:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "05:30"},
+            {"name": "Practice 2", "day_offset": -2, "time": "09:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "05:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "09:00"},
             {"name": "Race", "day_offset": 0, "time": "09:00"},
         ]
     },
