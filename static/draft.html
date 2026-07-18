@@ -62,6 +62,19 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .driver-points span{display:block;font-family:'Barlow',sans-serif;font-weight:600;font-size:.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .pick-item .pick-pts{margin-left:auto;font-weight:800;color:var(--gold);font-size:.78rem}
 
+/* Pick Log */
+.pick-log{max-height:320px;overflow-y:auto;scrollbar-width:thin}
+.pick-log table{width:100%;border-collapse:collapse;font-size:.82rem}
+.pick-log th{text-align:left;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--muted);padding:.4rem .5rem;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)}
+.pick-log td{padding:.35rem .5rem;border-bottom:1px solid var(--divider)}
+.pick-log tr:last-child td{border-bottom:none}
+.pick-log .log-num{font-weight:800;color:var(--faint);width:40px}
+.pick-log .log-round{color:var(--muted);width:60px}
+.pick-log .log-player{font-weight:700}
+.pick-log .log-arrow{color:var(--faint);width:20px;text-align:center}
+.pick-log .log-driver{font-weight:600}
+.pick-log tr.log-latest{background:rgba(225,6,0,.08)}
+
 /* Picks History */
 .picks-panel{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
 .player-picks{background:var(--surface2);border:1px solid var(--border);border-radius:.75rem;padding:1rem}
@@ -131,6 +144,11 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
       <div class="section-title">Draft Board</div>
       <div class="picks-panel" id="picksPanel"></div>
     </div>
+
+    <div class="section">
+      <div class="section-title">📋 Pick Log</div>
+      <div class="pick-log" id="pickLog"></div>
+    </div>
   </div>
 
   <!-- Phase 3: Completed -->
@@ -142,6 +160,10 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
     <div class="section">
       <div class="section-title">Final Picks</div>
       <div class="picks-panel" id="finalPicksPanel"></div>
+    </div>
+    <div class="section">
+      <div class="section-title">📋 Pick Log</div>
+      <div class="pick-log" id="finalPickLog"></div>
     </div>
     <div style="text-align:center;margin-top:1rem">
       <button class="btn btn-green" id="btnFinalize" style="font-size:1.1rem;padding:.75rem 3rem">✅ Finalize & Save to Sheets</button>
@@ -281,6 +303,8 @@ function renderDraftBoard() {
 
   // Picks panel
   renderPicksPanel('picksPanel');
+  // Pick log
+  renderPickLog('pickLog');
 }
 
 function renderPicksPanel(panelId) {
@@ -299,8 +323,35 @@ function renderPicksPanel(panelId) {
   }).join('');
 }
 
+function renderPickLog(logId) {
+  const el = document.getElementById(logId);
+  if (!el) return;
+  const picks = draftState.picks || [];
+  if (!picks.length) {
+    el.innerHTML = '<div style="color:var(--faint);font-size:.82rem;padding:.5rem 0">No picks yet — the log will appear here as picks are made.</div>';
+    return;
+  }
+  const n = PLAYERS.length || 4;
+  const rows = picks.map((p, i) => {
+    const round = Math.floor(i / n) + 1;
+    const color = PLAYER_COLORS[p.player_name] || 'var(--text)';
+    const isLatest = i === picks.length - 1;
+    return `<tr class="${isLatest ? 'log-latest' : ''}">
+      <td class="log-num">${p.pick_number}</td>
+      <td class="log-round">R${round}</td>
+      <td class="log-player" style="color:${color}">${p.player_name}</td>
+      <td class="log-arrow">→</td>
+      <td class="log-driver">${p.driver_name}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<table><thead><tr><th>#</th><th>Round</th><th>Player</th><th></th><th>Driver</th></tr></thead><tbody>${rows}</tbody></table>`;
+  // Auto-scroll to the latest pick
+  el.scrollTop = el.scrollHeight;
+}
+
 function renderCompleted() {
   renderPicksPanel('finalPicksPanel');
+  renderPickLog('finalPickLog');
 }
 
 function showConfirmModal() {
