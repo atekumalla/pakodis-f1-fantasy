@@ -105,6 +105,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 <header class="hdr">
   <div class="hdr-title"><span>F1</span> Mid-Season Draft</div>
   <div class="hdr-actions">
+    <button class="btn btn-sec" id="btnShare" style="display:none" title="Share draft picks">📤 Share</button>
     <button class="btn btn-sec" id="btnUndo" style="display:none">↩ Undo</button>
     <button class="btn btn-sec" id="btnReset" style="display:none">🗑 Reset</button>
     <a class="btn btn-sec" href="/">← Dashboard</a>
@@ -244,6 +245,7 @@ function renderDraft() {
   document.getElementById('completedPhase').style.display = (s === 'completed') ? '' : 'none';
   document.getElementById('btnUndo').style.display = (s === 'in_progress' || s === 'order_set') ? '' : 'none';
   document.getElementById('btnReset').style.display = (s !== 'not_started') ? '' : 'none';
+  document.getElementById('btnShare').style.display = (draftState.picks && draftState.picks.length > 0) ? '' : 'none';
 
   if (s === 'order_set' || s === 'in_progress') renderDraftBoard();
   if (s === 'completed') renderCompleted();
@@ -498,6 +500,37 @@ document.getElementById('btnFinalize').addEventListener('click', async () => {
     document.getElementById('btnFinalize').textContent = '✅ Finalized';
   } catch(e) { showToast('❌ Failed to finalize'); }
 });
+
+// Share
+document.getElementById('btnShare').addEventListener('click', shareDraftPicks);
+
+function shareDraftPicks() {
+  if (!draftState || !draftState.picks_by_player) return;
+  const byPlayer = draftState.picks_by_player;
+  const isComplete = draftState.status === 'completed';
+  const title = isComplete ? '🏆 F1 H2 Draft Results' : '🏎️ F1 H2 Draft — In Progress';
+  let lines = [title, ''];
+  PLAYERS.forEach(name => {
+    const picks = byPlayer[name] || [];
+    if (picks.length === 0) return;
+    lines.push(`*${name}*`);
+    picks.forEach((d, i) => lines.push(`  ${i + 1}. ${d}`));
+    lines.push('');
+  });
+  if (!isComplete) {
+    const cp = draftState.current_picker;
+    if (cp) lines.push(`⏳ Next pick: ${cp} (Pick ${draftState.current_pick_number} of ${draftState.total_picks})`);
+  }
+  const text = lines.join('\n').trim();
+  if (navigator.share) {
+    navigator.share({ title, text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(
+      () => showToast('📋 Copied to clipboard!'),
+      () => showToast('❌ Copy failed')
+    );
+  }
+}
 
 function showToast(msg) {
   const t = document.getElementById('toast');
