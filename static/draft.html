@@ -133,6 +133,10 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
     <div class="draft-header">
       <div class="pick-info" id="pickInfo">Round 1 — Pick 1 of 20</div>
       <div class="current-picker" id="currentPicker">—</div>
+      <div id="draftOrderBanner" style="display:flex;align-items:center;justify-content:center;gap:.5rem;flex-wrap:wrap;margin:.75rem 0 .25rem;font-size:.82rem;color:var(--muted)">
+        <span style="font-weight:700">Draft Order:</span>
+        <span id="draftOrderList"></span>
+      </div>
       <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     </div>
 
@@ -261,6 +265,12 @@ function renderDraftBoard() {
   document.getElementById('currentPicker').style.color = cp ? (PLAYER_COLORS[cp] || 'var(--text)') : 'var(--text)';
   document.getElementById('pickInfo').textContent = `Round ${round} — Pick ${pickNum} of ${total}`;
   document.getElementById('progressFill').style.width = `${((pickNum - 1) / total) * 100}%`;
+
+  // Draft order banner
+  const baseOrder = draftState.base_order || [];
+  document.getElementById('draftOrderList').innerHTML = baseOrder.map((name, i) =>
+    `<span style="font-weight:700;color:${PLAYER_COLORS[name]||'var(--text)'}">${i+1}. ${name}</span>`
+  ).join('<span style="color:var(--faint);margin:0 .15rem">→</span>');
 
   // Driver grid
   const picked = new Set(draftState.picks.map(p => p.driver_name));
