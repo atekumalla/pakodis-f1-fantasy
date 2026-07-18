@@ -165,7 +165,19 @@ class DraftManager:
             all_drivers: All 20 F1 driver names available for picking.
             randomize: If True, randomly determine draft order.
             custom_order: If provided, use this exact order (overrides randomize).
+
+        Raises:
+            ValueError: If a draft is already in progress or completed.
         """
+        if self.state.status in (DraftStatus.IN_PROGRESS, DraftStatus.ORDER_SET):
+            raise ValueError(
+                "A draft is already in progress. Reset it first before starting a new one."
+            )
+        if self.state.status == DraftStatus.COMPLETED:
+            raise ValueError(
+                "Draft is already completed. Reset it first to start a new one."
+            )
+
         # Each player picks exactly DRAFT_PICKS_PER_PLAYER drivers (default 5),
         # so with 4 players that's 20 picks — NOT every available driver.
         num_players = len(player_names)

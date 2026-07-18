@@ -375,6 +375,7 @@ document.getElementById('btnRandomize').addEventListener('click', async () => {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(withDemo({ randomize: true })),
     });
+    if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
     draftState = await r.json();
     lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
 
@@ -415,6 +416,7 @@ document.getElementById('btnStartCustom').addEventListener('click', async () => 
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(withDemo({ custom_order: order })),
     });
+    if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
     draftState = await r.json();
     lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
     renderDraft();
@@ -453,6 +455,7 @@ document.getElementById('btnUndo').addEventListener('click', async () => {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(withDemo({})),
     });
+    if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
     draftState = await r.json();
     lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
     renderDraft();
@@ -469,6 +472,7 @@ document.getElementById('btnReset').addEventListener('click', async () => {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(withDemo({})),
     });
+    if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
     draftState = await r.json();
     lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
     document.getElementById('randomResult').style.display = 'none';
@@ -487,8 +491,11 @@ document.getElementById('btnFinalize').addEventListener('click', async () => {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(withDemo({})),
     });
+    if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
     const d = await r.json();
     showToast('✅ ' + d.message);
+    document.getElementById('btnFinalize').disabled = true;
+    document.getElementById('btnFinalize').textContent = '✅ Finalized';
   } catch(e) { showToast('❌ Failed to finalize'); }
 });
 
