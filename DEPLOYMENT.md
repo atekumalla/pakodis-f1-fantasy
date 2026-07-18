@@ -129,7 +129,7 @@ Click **"Add Environment Variable"** for each:
 
 #### 7. HALFWAY_ROUND
 - **Key**: `HALFWAY_ROUND`
-- **Value**: `12` (British GP is the redraft point)
+- **Value**: `11` (Hungarian GP is the redraft point — 22 active races after Bahrain & Saudi were cancelled, so the split is after round 11)
 
 #### 8. SYNC_COOLDOWN_SECONDS
 - **Key**: `SYNC_COOLDOWN_SECONDS`
@@ -393,7 +393,7 @@ To use your own domain:
 1. Share your app URL with your league members
 2. Set up WhatsApp group for standings updates
 3. Monitor during race weekends to ensure sync is working
-4. Prepare for mid-season redraft at Round 12 (British GP)
+4. Prepare for mid-season redraft at Round 11 (Hungarian GP)
 
 **Need help?** Check the logs first, then refer to the troubleshooting section above.
 

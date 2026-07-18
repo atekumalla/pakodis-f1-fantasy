@@ -12,10 +12,16 @@ load_dotenv(_project_root / ".env")
 logger = logging.getLogger(__name__)
 
 # Halfway point for the season (races 1-N are H1, races N+1 to end are H2).
-# For 2026: 24 rounds originally, but Bahrain (R4) & Saudi Arabia (R5) canceled.
-# With 22 active races, Round 12 (British GP) is the halfway marker.
-# Races 1-12 are H1, Races 13-25 are H2.
-HALFWAY_ROUND = int(os.getenv("HALFWAY_ROUND", "12"))
+# For 2026: 24 rounds originally, but Bahrain (R4) & Saudi Arabia (R5) canceled,
+# leaving 22 ACTIVE races. The live calendar RENUMBERS active races 1..22, so the
+# mid-season redraft fires after the Hungarian GP. With the renumbered schedule the
+# Hungarian GP is round 11 (per the league's counting), so races 1-11 are H1 and
+# races 12+ are H2. Override with the HALFWAY_ROUND env var if needed.
+HALFWAY_ROUND = int(os.getenv("HALFWAY_ROUND", "11"))
+
+# Number of drivers each player drafts in the mid-season redraft.
+# 4 players x 5 drivers = 20 total picks (out of 22 active drivers).
+DRIVERS_PER_PLAYER = int(os.getenv("DRIVERS_PER_PLAYER", "5"))
 
 
 class Config:
@@ -64,6 +70,11 @@ class Config:
 
     # --- Demo Mode ---
     DEMO_GOOGLE_SHEETS_ID: str = os.getenv("DEMO_GOOGLE_SHEETS_ID", "")
+
+    # --- Draft ---
+    # Each player drafts exactly this many drivers in the mid-season redraft.
+    # 4 players x 5 = 20 total picks (out of 22 active drivers).
+    DRAFT_PICKS_PER_PLAYER: int = int(os.getenv("DRAFT_PICKS_PER_PLAYER", "5"))
 
     # --- Share Message ---
     DASHBOARD_URL: str = os.getenv("DASHBOARD_URL", "")

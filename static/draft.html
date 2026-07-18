@@ -45,13 +45,22 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .progress-fill{height:100%;background:var(--red);border-radius:4px;transition:width .3s}
 
 .driver-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;margin-bottom:1.5rem}
-.driver-tile{background:var(--surface2);border:2px solid var(--border);border-radius:.75rem;padding:1rem;cursor:pointer;transition:all .15s;text-align:center;position:relative}
-.driver-tile:hover:not(.picked){border-color:var(--red);transform:translateY(-2px);box-shadow:0 4px 12px rgba(225,6,0,.2)}
-.driver-tile.picked{opacity:.4;cursor:not-allowed;border-color:var(--divider)}
-.driver-tile.picked::after{content:attr(data-owner);position:absolute;top:4px;right:6px;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--surface);color:var(--muted);border:1px solid var(--border)}
-.driver-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:.25rem}
-.driver-team{font-size:.75rem;color:var(--muted)}
-.driver-number{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.9rem;color:var(--faint)}
+.driver-tile{background:var(--surface2);border:2px solid var(--border);border-left:4px solid var(--team-color,var(--border));border-radius:.75rem;padding:.85rem;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;gap:.7rem}
+.driver-tile:hover:not(.picked){border-color:var(--red);border-left-color:var(--team-color,var(--red));transform:translateY(-2px);box-shadow:0 4px 12px rgba(225,6,0,.2)}
+.driver-tile.picked{opacity:.45;cursor:not-allowed;border-color:var(--divider);border-left-color:var(--divider)}
+.driver-tile.picked::after{content:attr(data-owner);position:absolute;top:4px;right:6px;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.driver-photo{width:46px;height:46px;border-radius:50%;object-fit:cover;background:var(--border);flex-shrink:0;border:2px solid var(--team-color,var(--border))}
+.driver-initials{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.85rem;font-family:'Barlow Condensed',sans-serif}
+.driver-info{flex:1;min-width:0}
+.driver-name-row{display:flex;align-items:center;gap:.35rem}
+.driver-flag{font-size:.85rem}
+.driver-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.driver-meta{display:flex;align-items:center;gap:.4rem;font-size:.68rem;color:var(--muted);margin-top:.15rem}
+.driver-number{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.7rem;color:#fff;background:var(--team-color,var(--faint));padding:1px 6px;border-radius:3px;flex-shrink:0}
+.driver-team{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.driver-points{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.25rem;color:var(--gold);text-align:right;flex-shrink:0;line-height:1}
+.driver-points span{display:block;font-family:'Barlow',sans-serif;font-weight:600;font-size:.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.pick-item .pick-pts{margin-left:auto;font-weight:800;color:var(--gold);font-size:.78rem}
 
 /* Picks History */
 .picks-panel{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
@@ -75,8 +84,8 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:.75rem 1.25rem;box-shadow:0 12px 32px rgba(0,0,0,.5);font-weight:600;z-index:1000;transition:transform .3s}
 .toast.show{transform:translateX(-50%) translateY(0)}
 
-@media(max-width:900px){.picks-panel{grid-template-columns:repeat(2,1fr)}.driver-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
-@media(max-width:600px){.hdr{padding:.6rem .75rem;flex-wrap:wrap;gap:.5rem}.hdr-title{font-size:1.2rem}.hdr-actions{width:100%;justify-content:flex-end;gap:.4rem}.btn{padding:.4rem .7rem;font-size:.75rem}.main{padding:1rem;gap:1rem}.section{padding:1rem}.section-title{font-size:1.15rem}.picks-panel{grid-template-columns:1fr 1fr}.driver-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.5rem}.driver-tile{padding:.75rem}.driver-name{font-size:1rem}.current-picker{font-size:1.6rem}.completed-banner{padding:1.5rem 1rem}.completed-title{font-size:1.6rem}.modal{padding:1.25rem;width:94%}.modal-driver{font-size:1.5rem}.modal-actions{flex-wrap:wrap}}
+@media(max-width:900px){.picks-panel{grid-template-columns:repeat(2,1fr)}.driver-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}}
+@media(max-width:600px){.hdr{padding:.6rem .75rem;flex-wrap:wrap;gap:.5rem}.hdr-title{font-size:1.2rem}.hdr-actions{width:100%;justify-content:flex-end;gap:.4rem}.btn{padding:.4rem .7rem;font-size:.75rem}.main{padding:1rem;gap:1rem}.section{padding:1rem}.section-title{font-size:1.15rem}.picks-panel{grid-template-columns:1fr 1fr}.driver-grid{grid-template-columns:1fr 1fr;gap:.5rem}.driver-tile{padding:.6rem}.driver-photo{width:38px;height:38px}.driver-name{font-size:.95rem}.current-picker{font-size:1.6rem}.completed-banner{padding:1.5rem 1rem}.completed-title{font-size:1.6rem}.modal{padding:1.25rem;width:94%}.modal-driver{font-size:1.5rem}.modal-actions{flex-wrap:wrap}}
 </style>
 </head>
 <body>
@@ -158,9 +167,19 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 <script>
 const PLAYER_COLORS = {'Anup':'#e10600','Rohit':'#3b82f6','Abhinav':'#22c55e','Prateik':'#f59e0b'};
 const PLAYERS = ['Anup','Rohit','Abhinav','Prateik'];
+// Demo mode: append ?demo=1 to the URL to use the isolated sandbox that never
+// touches the real Google Sheet.
+const DEMO = new URLSearchParams(location.search).has('demo');
 let DRIVERS = [];
 let draftState = null;
 let pendingPick = null;
+let lastRevision = -1;
+let pollTimer = null;
+
+// Inject demo body into every draft API request body.
+function withDemo(body) { return DEMO ? { ...body, demo: true } : body; }
+// Append ?demo=1 to GET requests.
+function apiUrl(path) { return DEMO ? path + (path.includes('?') ? '&' : '?') + 'demo=1' : path; }
 
 async function loadDrivers() {
   const r = await fetch('/api/drivers');
@@ -168,9 +187,30 @@ async function loadDrivers() {
 }
 
 async function loadDraftStatus() {
-  const r = await fetch('/api/draft/status');
+  const r = await fetch(apiUrl('/api/draft/status'));
   draftState = await r.json();
+  lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
   renderDraft();
+}
+
+// Lightweight polling so all browsers see picks made by other players in near
+// real-time. Only re-renders when the server-side revision changes.
+async function pollDraftStatus() {
+  try {
+    const r = await fetch(apiUrl('/api/draft/status'));
+    if (!r.ok) return;
+    const next = await r.json();
+    if (next.revision == null || next.revision !== lastRevision) {
+      lastRevision = next.revision != null ? next.revision : lastRevision;
+      draftState = next;
+      renderDraft();
+    }
+  } catch (e) { /* transient network error — keep polling */ }
+}
+
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(pollDraftStatus, 2500);
 }
 
 function renderDraft() {
@@ -206,10 +246,29 @@ function renderDraftBoard() {
   const grid = document.getElementById('driverGrid');
   grid.innerHTML = DRIVERS.map(d => {
     const isPicked = picked.has(d.name);
-    return `<div class="driver-tile ${isPicked ? 'picked' : ''}" data-driver="${d.name}" data-team="${d.team}" data-owner="${isPicked ? pickOwner[d.name] : ''}">
-      <div class="driver-number">#${d.number}</div>
-      <div class="driver-name">${d.name}</div>
-      <div class="driver-team">${d.team}</div>
+    const pts = (d.points != null) ? d.points : 0;
+    const teamColor = d.team_color || '888888';
+    const headshotUrl = d.headshot_url || '';
+    const flag = d.country_flag || '';
+    const firstName = d.name ? d.name.split(' ')[0] : '';
+    const lastName = d.name ? d.name.split(' ').pop() : '';
+    const initials = (firstName[0] || '') + (lastName[0] || '');
+    const photoHtml = headshotUrl
+      ? `<img class="driver-photo" src="${headshotUrl}" alt="${d.name}" onerror="this.outerHTML='<div class=\\'driver-photo driver-initials\\' style=\\'background:#${teamColor}\\'>${initials}</div>'">`
+      : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
+    return `<div class="driver-tile ${isPicked ? 'picked' : ''}" style="--team-color:#${teamColor}" data-driver="${d.name}" data-team="${d.team}" data-owner="${isPicked ? pickOwner[d.name] : ''}">
+      ${photoHtml}
+      <div class="driver-info">
+        <div class="driver-name-row">
+          <span class="driver-flag">${flag}</span>
+          <span class="driver-name">${firstName} <strong>${lastName}</strong></span>
+        </div>
+        <div class="driver-meta">
+          <span class="driver-number">#${d.number || '?'}</span>
+          <span class="driver-team">${d.team || ''}</span>
+        </div>
+      </div>
+      <div class="driver-points">${pts}<span>pts</span></div>
     </div>`;
   }).join('');
 
@@ -227,11 +286,14 @@ function renderDraftBoard() {
 function renderPicksPanel(panelId) {
   const panel = document.getElementById(panelId);
   const byPlayer = draftState.picks_by_player || {};
+  const ptsByDriver = {};
+  DRIVERS.forEach(d => { ptsByDriver[d.name] = (d.points != null) ? d.points : 0; });
   panel.innerHTML = PLAYERS.map(name => {
     const picks = byPlayer[name] || [];
-    const items = picks.map((d, i) => `<div class="pick-item"><span class="pick-num">${i+1}.</span> ${d}</div>`).join('');
+    const totalPts = picks.reduce((sum, d) => sum + (ptsByDriver[d] || 0), 0);
+    const items = picks.map((d, i) => `<div class="pick-item"><span class="pick-num">${i+1}.</span> ${d} <span class="pick-pts">${ptsByDriver[d] || 0} pts</span></div>`).join('');
     return `<div class="player-picks">
-      <div class="player-picks-name" style="color:${PLAYER_COLORS[name]||'var(--text)'}">${name} (${picks.length}/5)</div>
+      <div class="player-picks-name" style="color:${PLAYER_COLORS[name]||'var(--text)'}">${name} (${picks.length}/5) · ${Math.round(totalPts * 100) / 100} pts</div>
       ${items || '<div style="color:var(--faint);font-size:.8rem">No picks yet</div>'}
     </div>`;
   }).join('');
@@ -260,9 +322,10 @@ document.getElementById('btnRandomize').addEventListener('click', async () => {
     const r = await fetch('/api/draft/start', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ randomize: true }),
+      body: JSON.stringify(withDemo({ randomize: true })),
     });
     draftState = await r.json();
+    lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
 
     // Show the random result before the board
     const resultDiv = document.getElementById('randomResult');
@@ -299,9 +362,10 @@ document.getElementById('btnStartCustom').addEventListener('click', async () => 
     const r = await fetch('/api/draft/start', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ custom_order: order }),
+      body: JSON.stringify(withDemo({ custom_order: order })),
     });
     draftState = await r.json();
+    lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
     renderDraft();
   } catch(e) { showToast('❌ Failed to start draft'); }
 });
@@ -309,20 +373,22 @@ document.getElementById('btnStartCustom').addEventListener('click', async () => 
 // Confirm pick
 document.getElementById('btnConfirmPick').addEventListener('click', async () => {
   if (!pendingPick) return;
+  const pickedDriver = pendingPick.driver;
   try {
     const r = await fetch('/api/draft/pick', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
+      body: JSON.stringify(withDemo({
         player_name: draftState.current_picker,
-        driver_name: pendingPick.driver,
-      }),
+        driver_name: pickedDriver,
+      })),
     });
     if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); hideConfirmModal(); return; }
     draftState = await r.json();
+    lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
     hideConfirmModal();
     renderDraft();
-    showToast(`✅ ${pendingPick.driver} selected!`);
+    showToast(`✅ ${pickedDriver} selected!`);
   } catch(e) { showToast('❌ Pick failed'); hideConfirmModal(); }
 });
 
@@ -331,8 +397,13 @@ document.getElementById('btnCancelPick').addEventListener('click', hideConfirmMo
 // Undo
 document.getElementById('btnUndo').addEventListener('click', async () => {
   try {
-    const r = await fetch('/api/draft/undo', { method: 'POST' });
+    const r = await fetch('/api/draft/undo', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(withDemo({})),
+    });
     draftState = await r.json();
+    lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
     renderDraft();
     showToast('↩ Last pick undone');
   } catch(e) { showToast('❌ Undo failed'); }
@@ -342,8 +413,13 @@ document.getElementById('btnUndo').addEventListener('click', async () => {
 document.getElementById('btnReset').addEventListener('click', async () => {
   if (!confirm('Reset the entire draft? This cannot be undone.')) return;
   try {
-    const r = await fetch('/api/draft/reset', { method: 'POST' });
+    const r = await fetch('/api/draft/reset', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(withDemo({})),
+    });
     draftState = await r.json();
+    lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
     document.getElementById('randomResult').style.display = 'none';
     document.getElementById('customOrderForm').style.display = 'none';
     renderDraft();
@@ -353,9 +429,13 @@ document.getElementById('btnReset').addEventListener('click', async () => {
 
 // Finalize
 document.getElementById('btnFinalize').addEventListener('click', async () => {
-  if (!confirm('Finalize H2 picks and save to Google Sheets?')) return;
+  if (!confirm(DEMO ? 'Finish the demo draft? (Nothing is saved to Sheets.)' : 'Finalize H2 picks and save to Google Sheets?')) return;
   try {
-    const r = await fetch('/api/draft/finalize', { method: 'POST' });
+    const r = await fetch('/api/draft/finalize', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(withDemo({})),
+    });
     const d = await r.json();
     showToast('✅ ' + d.message);
   } catch(e) { showToast('❌ Failed to finalize'); }
@@ -369,9 +449,46 @@ function showToast(msg) {
 
 // Init
 (async () => {
+  if (DEMO) setupDemoUI();
   await loadDrivers();
   await loadDraftStatus();
+  startPolling();
 })();
+
+// ─── Demo mode UI ───────────────────────────────────────────────────────────
+function setupDemoUI() {
+  document.title = '🧪 DEMO — F1 Mid-Season Draft';
+  // Banner
+  const banner = document.createElement('div');
+  banner.style.cssText = 'background:linear-gradient(90deg,#f59e0b,#d97706);color:#111;font-weight:800;text-align:center;padding:.5rem 1rem;font-family:\'Barlow Condensed\',sans-serif;letter-spacing:.05em';
+  banner.innerHTML = '🧪 DEMO MODE — sandbox only, nothing is saved to Google Sheets. Share this URL (with <code>?demo=1</code>) across browsers to test.';
+  document.body.insertBefore(banner, document.body.firstChild);
+  // "Simulate pick" button in the header for solo multi-browser testing.
+  const actions = document.querySelector('.hdr-actions');
+  if (actions) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-gold';
+    btn.id = 'btnSimulate';
+    btn.textContent = '🤖 Simulate Pick';
+    btn.addEventListener('click', simulatePick);
+    actions.insertBefore(btn, actions.firstChild);
+  }
+}
+
+async function simulatePick() {
+  try {
+    const r = await fetch('/api/draft/simulate-pick', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(withDemo({})),
+    });
+    if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
+    draftState = await r.json();
+    lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
+    renderDraft();
+    showToast('🤖 Auto-picked for current player');
+  } catch(e) { showToast('❌ Simulate failed'); }
+}
 </script>
 </body>
 </html>

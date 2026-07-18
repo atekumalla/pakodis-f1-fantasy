@@ -23,7 +23,7 @@ services:
       - key: SYNC_TIMEZONE
         value: Asia/Kolkata
       - key: HALFWAY_ROUND
-        value: 12
+        value: 11
       - key: SYNC_COOLDOWN_SECONDS
         value: 90
       - key: SYNC_FORCE_COOLDOWN_SECONDS

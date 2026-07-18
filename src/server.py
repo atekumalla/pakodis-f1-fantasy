@@ -82,7 +82,7 @@ async def lifespan(app: FastAPI):
         "state_manager": StateManager(),
         "calculator": ScoringCalculator(DEFAULT_RULES),
         "openf1_api": OpenF1API(),
-        "draft_manager": DraftManager(all_drivers=get_all_driver_names()),
+        "draft_manager": None,
         "players": get_initial_players(),
         "sessions": [],
         "calendar": [],
@@ -94,16 +94,21 @@ async def lifespan(app: FastAPI):
         or Path(Config.GOOGLE_SHEETS_CREDENTIALS_FILE).exists()
     )
 
+    draft_backend = None
     if has_sheets:
         try:
             from src.sheets.results import read_results
-            
+            from src.sheets.draft_state import SheetsDraftBackend
+
             state["sheets_client"] = SheetsClient()
             state["players"] = read_draft_picks(state["sheets_client"])
             state["calendar"] = read_calendar(state["sheets_client"])
             
             # Load historical results from sheets (source of truth)
             state["sessions"] = read_results(state["sheets_client"])
+
+            # Durable draft persistence (survives Render redeploys/restarts).
+            draft_backend = SheetsDraftBackend(state["sheets_client"])
             
             logger.info(
                 f"Loaded {len(state['players'])} players, "
@@ -113,6 +118,37 @@ async def lifespan(app: FastAPI):
             logger.warning(f"Failed to load from sheets: {e}")
     else:
         logger.warning("No Google Sheets credentials — running with seed data only")
+
+    # Build the draft manager now that we (maybe) have a durable sheets backend.
+    # It loads existing state from sheets first, then falls back to local disk.
+    state["draft_manager"] = DraftManager(
+        all_drivers=get_all_driver_names(),
+        sheets_backend=draft_backend,
+    )
+
+    # Demo draft manager: isolated sandbox for testing the turn-by-turn flow
+    # across multiple browsers. It uses a separate state file and NEVER touches
+    # the real league sheet. If DEMO_GOOGLE_SHEETS_ID is set (a throwaway copy
+    # of the prod sheet, shared with the service account), the demo draft
+    # persists there so it also survives restarts; otherwise it's memory/disk only.
+    _demo_state_file = str(Path(Config.DRAFT_STATE_FILE).with_name("demo_draft_state.json"))
+    demo_backend = None
+    if Config.DEMO_GOOGLE_SHEETS_ID and (
+        Config.has_credentials_json()
+        or Path(Config.GOOGLE_SHEETS_CREDENTIALS_FILE).exists()
+    ):
+        try:
+            from src.sheets.draft_state import SheetsDraftBackend
+            demo_client = SheetsClient(spreadsheet_id=Config.DEMO_GOOGLE_SHEETS_ID)
+            demo_backend = SheetsDraftBackend(demo_client)
+            logger.info("Demo draft will persist to DEMO_GOOGLE_SHEETS_ID sheet")
+        except Exception as e:
+            logger.warning(f"Failed to init demo sheet backend: {e}")
+    state["demo_draft_manager"] = DraftManager(
+        state_file=_demo_state_file,
+        all_drivers=get_all_driver_names(),
+        sheets_backend=demo_backend,
+    )
 
     def _sync():
         _do_sync(_app_state)
@@ -256,24 +292,25 @@ async def get_status():
     force_sync_wait = rate_limiter.seconds_until_ready("force_sync")
 
     # Determine which half is currently active based on date
-    from src.seed_data import CALENDAR_2026, get_halfway_round
+    from src.seed_data import get_race_weekends
     from datetime import date as dt_date
     today = dt_date.today()
-    
-    # For display: Always show original calendar (24 rounds) and Round 12 as halfway
-    # Even though 2 races are cancelled, we keep the original round numbering
-    total_races = 24  # Original 2026 calendar count
-    halfway_round = 12  # British GP is Round 12 (halfway point)
-    
-    # Determine active half based on calendar
+
+    # Use the live (renumbered) calendar so cancelled races are excluded. The
+    # mid-season redraft fires after HALFWAY_ROUND (Hungarian GP by default).
+    weekends = get_race_weekends()
+    total_races = len(weekends)
+    halfway_round = HALFWAY_ROUND
+
+    # Determine active half based on the halfway race date
     try:
         halfway_idx = halfway_round - 1
-        if halfway_idx < len(CALENDAR_2026):
-            halfway_date = dt_date.fromisoformat(CALENDAR_2026[halfway_idx]["date"])
+        if 0 <= halfway_idx < len(weekends):
+            halfway_date = weekends[halfway_idx].race_date
             active_half = "H2" if today > halfway_date else "H1"
         else:
             active_half = "H1"
-    except (IndexError, KeyError):
+    except (IndexError, AttributeError):
         active_half = "H1"
 
     return {
@@ -356,7 +393,7 @@ async def trigger_force_sync(x_admin_token: str | None = Header(default=None)):
 
 @app.get("/api/drivers")
 async def get_drivers():
-    """List all 20 drivers with team info."""
+    """List all 20 drivers with team info and fantasy points scored so far."""
     players = _app_state.get("players", [])
     driver_to_player_h1: dict[str, str] = {}
     driver_to_player_h2: dict[str, str] = {}
@@ -367,7 +404,28 @@ async def get_drivers():
             driver_to_player_h2[d] = p.name
 
     from src.seed_data import TEAM_COLORS, COUNTRY_FLAGS
-    
+
+    # Fantasy points scored by each driver so far, used by the draft board so
+    # the picker can see how each driver has performed before selecting them.
+    sessions = _app_state.get("sessions", [])
+    calculator: ScoringCalculator = _app_state.get("calculator")
+    finished = [s for s in sessions if s.is_finished or s.is_live]
+
+    driver_points_total: dict[str, float] = {}
+    driver_points_h1: dict[str, float] = {}
+    driver_points_h2: dict[str, float] = {}
+    if calculator:
+        for d in DRIVERS_2026:
+            driver_points_h1[d["name"]] = calculator.calculate_driver_total(
+                d["name"], finished, half="H1"
+            )
+            driver_points_h2[d["name"]] = calculator.calculate_driver_total(
+                d["name"], finished, half="H2"
+            )
+            driver_points_total[d["name"]] = round(
+                driver_points_h1[d["name"]] + driver_points_h2[d["name"]], 2
+            )
+
     return [
         {
             "number": d["number"],
@@ -380,6 +438,9 @@ async def get_drivers():
             "headshot_url": d.get("headshot_url", ""),
             "owner_h1": driver_to_player_h1.get(d["name"]),
             "owner_h2": driver_to_player_h2.get(d["name"]),
+            "points": driver_points_total.get(d["name"], 0.0),
+            "points_h1": driver_points_h1.get(d["name"], 0.0),
+            "points_h2": driver_points_h2.get(d["name"], 0.0),
         }
         for d in DRIVERS_2026
     ]
@@ -632,11 +693,22 @@ async def get_share_text():
 
 # ─── API: MID-SEASON DRAFT ──────────────────────────────────────────────────
 
-@app.get("/api/draft/status")
-async def get_draft_status():
-    draft_mgr = _app_state.get("draft_manager")
+def _get_draft_manager(demo: bool = False):
+    """Return the demo sandbox manager or the real draft manager.
+
+    The demo manager is fully isolated: separate state file, no Google Sheets
+    backend, so demo drafts can never touch real league data.
+    """
+    key = "demo_draft_manager" if demo else "draft_manager"
+    draft_mgr = _app_state.get(key)
     if not draft_mgr:
         raise HTTPException(500, "Draft manager not initialized")
+    return draft_mgr
+
+
+@app.get("/api/draft/status")
+async def get_draft_status(demo: bool = False):
+    draft_mgr = _get_draft_manager(demo)
     return draft_mgr.get_status()
 
 
@@ -645,10 +717,9 @@ async def start_draft(body: dict):
     """
     Start the mid-season draft.
     Body: { "randomize": true } or { "custom_order": ["Anup", "Rohit", ...] }
+    Add "demo": true to run in the isolated demo sandbox.
     """
-    draft_mgr = _app_state.get("draft_manager")
-    if not draft_mgr:
-        raise HTTPException(500, "Draft manager not initialized")
+    draft_mgr = _get_draft_manager(body.get("demo", False))
 
     randomize = body.get("randomize", True)
     custom_order = body.get("custom_order")
@@ -670,10 +741,9 @@ async def make_draft_pick(body: dict):
     """
     Make a draft pick.
     Body: { "player_name": "Abhinav", "driver_name": "Charles Leclerc" }
+    Add "demo": true to run in the isolated demo sandbox.
     """
-    draft_mgr = _app_state.get("draft_manager")
-    if not draft_mgr:
-        raise HTTPException(500, "Draft manager not initialized")
+    draft_mgr = _get_draft_manager(body.get("demo", False))
 
     player = body.get("player_name")
     driver = body.get("driver_name")
@@ -689,10 +759,8 @@ async def make_draft_pick(body: dict):
 
 
 @app.post("/api/draft/undo")
-async def undo_draft_pick():
-    draft_mgr = _app_state.get("draft_manager")
-    if not draft_mgr:
-        raise HTTPException(500, "Draft manager not initialized")
+async def undo_draft_pick(body: dict | None = None):
+    draft_mgr = _get_draft_manager((body or {}).get("demo", False))
     try:
         draft_mgr.undo_last_pick()
         return draft_mgr.get_status()
@@ -701,28 +769,75 @@ async def undo_draft_pick():
 
 
 @app.post("/api/draft/reset")
-async def reset_draft():
-    draft_mgr = _app_state.get("draft_manager")
-    if not draft_mgr:
-        raise HTTPException(500, "Draft manager not initialized")
+async def reset_draft(body: dict | None = None):
+    draft_mgr = _get_draft_manager((body or {}).get("demo", False))
     draft_mgr.reset_draft()
     return draft_mgr.get_status()
 
 
-@app.post("/api/draft/finalize")
-async def finalize_draft():
-    """Finalize the H2 draft: save picks to Google Sheets."""
-    draft_mgr = _app_state.get("draft_manager")
-    sheets_client = _app_state.get("sheets_client")
+@app.post("/api/draft/simulate-pick")
+async def simulate_draft_pick(body: dict | None = None):
+    """DEMO ONLY: auto-pick a random available driver for the current picker.
 
-    if not draft_mgr:
-        raise HTTPException(500, "Draft manager not initialized")
+    Lets you test the turn-by-turn flow solo across multiple browsers without
+    having to manually pick for every player.
+    """
+    body = body or {}
+    if not body.get("demo", False):
+        raise HTTPException(400, "simulate-pick is only available in demo mode")
+
+    draft_mgr = _get_draft_manager(True)
+    st = draft_mgr.state
+    # Convenience: if the demo draft hasn't been started yet, auto-start it with
+    # a randomized order so testers can hammer "Simulate Pick" immediately.
+    if st.status.value == "not_started":
+        draft_mgr.start_draft(
+            player_names=PLAYER_NAMES,
+            all_drivers=get_all_driver_names(),
+            randomize=True,
+        )
+        st = draft_mgr.state
+
+    picker = st.current_picker
+    if not picker:
+        raise HTTPException(400, "No current picker — draft not in progress")
+    if not st.available_drivers:
+        raise HTTPException(400, "No drivers available to pick")
+
+    import random
+    driver = random.choice(st.available_drivers)
+    try:
+        draft_mgr.make_pick(picker, driver)
+        return draft_mgr.get_status()
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/draft/finalize")
+async def finalize_draft(body: dict | None = None):
+    """Finalize the H2 draft: save picks to Google Sheets.
+
+    Demo drafts are never written to Sheets.
+    """
+    body = body or {}
+    is_demo = body.get("demo", False)
+    draft_mgr = _get_draft_manager(is_demo)
 
     if not draft_mgr.state.is_complete:
         raise HTTPException(400, "Draft is not yet complete")
 
-    # Update players with H2 picks
     picks_by_player = draft_mgr.state.picks_by_player
+
+    if is_demo:
+        return {
+            "status": "finalized",
+            "picks_by_player": picks_by_player,
+            "message": "Demo draft complete (not saved to Sheets).",
+        }
+
+    sheets_client = _app_state.get("sheets_client")
+
+    # Update players with H2 picks
     players = _app_state.get("players", [])
 
     for player in players:

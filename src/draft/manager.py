@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
@@ -53,6 +54,7 @@ class DraftState(BaseModel):
     total_picks: int = 20
     created_at: str = ""
     completed_at: str = ""
+    revision: int = 0                                          # Bumped on every save; used for polling
 
     @property
     def current_picker(self) -> Optional[str]:
@@ -93,13 +95,35 @@ class DraftState(BaseModel):
 class DraftManager:
     """Manages the mid-season redraft process."""
 
-    def __init__(self, state_file: str | None = None, all_drivers: list[str] | None = None):
+    def __init__(
+        self,
+        state_file: str | None = None,
+        all_drivers: list[str] | None = None,
+        sheets_backend=None,
+    ):
         self.state_file = Path(state_file or Config.DRAFT_STATE_FILE)
         self.all_drivers = all_drivers or []
+        # Optional durable backend (Google Sheets). Must expose
+        # load_state() -> dict | None and save_state(dict) -> None.
+        self.sheets_backend = sheets_backend
+        # Guards all state mutations so simultaneous picks from different
+        # browsers can't corrupt the draft or double-write the state file.
+        self._lock = threading.RLock()
         self.state = self._load()
 
     def _load(self) -> DraftState:
-        """Load draft state from disk."""
+        """Load draft state, preferring the durable sheets backend."""
+        # 1) Try the durable backend (survives redeploys / ephemeral disk).
+        if self.sheets_backend is not None:
+            try:
+                data = self.sheets_backend.load_state()
+                if data:
+                    logger.info("Loaded draft state from Google Sheets")
+                    return DraftState(**data)
+            except Exception as e:
+                logger.warning(f"Failed to load draft state from sheets: {e}")
+
+        # 2) Fall back to the local disk cache.
         if self.state_file.exists():
             try:
                 with open(self.state_file, "r") as f:
@@ -110,11 +134,21 @@ class DraftManager:
         return DraftState()
 
     def _save(self):
-        """Persist draft state to disk."""
+        """Persist draft state to disk and (if configured) to Google Sheets."""
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        self.state.revision += 1
+        payload = self.state.model_dump()
         with open(self.state_file, "w") as f:
-            json.dump(self.state.model_dump(), f, indent=2)
+            json.dump(payload, f, indent=2)
         logger.debug(f"Draft state saved to {self.state_file}")
+
+        if self.sheets_backend is not None:
+            try:
+                self.sheets_backend.save_state(payload)
+            except Exception as e:
+                # Sheets is the durable store, but a write failure shouldn't
+                # crash a pick — the local cache still has the latest state.
+                logger.warning(f"Failed to persist draft state to sheets: {e}")
 
     def start_draft(
         self,
@@ -132,30 +166,36 @@ class DraftManager:
             randomize: If True, randomly determine draft order.
             custom_order: If provided, use this exact order (overrides randomize).
         """
+        # Each player picks exactly DRAFT_PICKS_PER_PLAYER drivers (default 5),
+        # so with 4 players that's 20 picks — NOT every available driver.
+        num_players = len(player_names)
+        total_picks = num_players * Config.DRAFT_PICKS_PER_PLAYER
+
         if custom_order:
             base_order = list(custom_order)
-            pick_order = generate_custom_snake_order(base_order, total_picks=len(all_drivers))
+            pick_order = generate_custom_snake_order(base_order, total_picks=total_picks)
         elif randomize:
-            pick_order = generate_snake_order(player_names, total_picks=len(all_drivers), randomize=True)
+            pick_order = generate_snake_order(player_names, total_picks=total_picks, randomize=True)
             # Extract the base order from the first N picks
             base_order = pick_order[:len(player_names)]
         else:
             base_order = list(player_names)
-            pick_order = generate_custom_snake_order(base_order, total_picks=len(all_drivers))
+            pick_order = generate_custom_snake_order(base_order, total_picks=total_picks)
 
-        self.state = DraftState(
-            status=DraftStatus.ORDER_SET,
-            player_names=list(player_names),
-            base_order=base_order,
-            pick_order=pick_order,
-            picks=[],
-            available_drivers=sorted(all_drivers),
-            current_pick_index=0,
-            total_picks=len(all_drivers),
-            created_at=datetime.now(timezone.utc).isoformat(),
-        )
-        self._save()
-        logger.info(f"Draft started! Order: {base_order}")
+        with self._lock:
+            self.state = DraftState(
+                status=DraftStatus.ORDER_SET,
+                player_names=list(player_names),
+                base_order=base_order,
+                pick_order=pick_order,
+                picks=[],
+                available_drivers=sorted(all_drivers),
+                current_pick_index=0,
+                total_picks=total_picks,
+                created_at=datetime.now(timezone.utc).isoformat(),
+            )
+            self._save()
+        logger.info(f"Draft started! Order: {base_order} ({total_picks} picks)")
         return self.state
 
     def make_pick(self, player_name: str, driver_name: str) -> DraftState:
@@ -169,74 +209,77 @@ class DraftManager:
         Raises:
             ValueError: If it's not this player's turn, or driver is unavailable.
         """
-        if self.state.status == DraftStatus.COMPLETED:
-            raise ValueError("Draft is already completed")
+        with self._lock:
+            if self.state.status == DraftStatus.COMPLETED:
+                raise ValueError("Draft is already completed")
 
-        if self.state.status == DraftStatus.NOT_STARTED:
-            raise ValueError("Draft hasn't started yet")
+            if self.state.status == DraftStatus.NOT_STARTED:
+                raise ValueError("Draft hasn't started yet")
 
-        expected = self.state.current_picker
-        if player_name != expected:
-            raise ValueError(
-                f"It's {expected}'s turn to pick, not {player_name}'s"
+            expected = self.state.current_picker
+            if player_name != expected:
+                raise ValueError(
+                    f"It's {expected}'s turn to pick, not {player_name}'s"
+                )
+
+            if driver_name not in self.state.available_drivers:
+                raise ValueError(
+                    f"{driver_name} is not available. "
+                    f"Available: {self.state.available_drivers}"
+                )
+
+            # Record the pick
+            pick = DraftPick(
+                pick_number=self.state.current_pick_index + 1,
+                player_name=player_name,
+                driver_name=driver_name,
+                timestamp=datetime.now(timezone.utc).isoformat(),
             )
+            self.state.picks.append(pick)
+            self.state.available_drivers.remove(driver_name)
+            self.state.current_pick_index += 1
 
-        if driver_name not in self.state.available_drivers:
-            raise ValueError(
-                f"{driver_name} is not available. "
-                f"Available: {self.state.available_drivers}"
+            # Update status
+            if self.state.status == DraftStatus.ORDER_SET:
+                self.state.status = DraftStatus.IN_PROGRESS
+
+            if self.state.is_complete:
+                self.state.status = DraftStatus.COMPLETED
+                self.state.completed_at = datetime.now(timezone.utc).isoformat()
+                logger.info("🏁 Draft completed!")
+
+            self._save()
+            logger.info(
+                f"Pick #{pick.pick_number}: {player_name} → {driver_name} "
+                f"({len(self.state.available_drivers)} remaining)"
             )
-
-        # Record the pick
-        pick = DraftPick(
-            pick_number=self.state.current_pick_index + 1,
-            player_name=player_name,
-            driver_name=driver_name,
-            timestamp=datetime.now(timezone.utc).isoformat(),
-        )
-        self.state.picks.append(pick)
-        self.state.available_drivers.remove(driver_name)
-        self.state.current_pick_index += 1
-
-        # Update status
-        if self.state.status == DraftStatus.ORDER_SET:
-            self.state.status = DraftStatus.IN_PROGRESS
-
-        if self.state.is_complete:
-            self.state.status = DraftStatus.COMPLETED
-            self.state.completed_at = datetime.now(timezone.utc).isoformat()
-            logger.info("🏁 Draft completed!")
-
-        self._save()
-        logger.info(
-            f"Pick #{pick.pick_number}: {player_name} → {driver_name} "
-            f"({len(self.state.available_drivers)} remaining)"
-        )
-        return self.state
+            return self.state
 
     def undo_last_pick(self) -> DraftState:
         """Undo the most recent pick (admin function)."""
-        if not self.state.picks:
-            raise ValueError("No picks to undo")
+        with self._lock:
+            if not self.state.picks:
+                raise ValueError("No picks to undo")
 
-        last_pick = self.state.picks.pop()
-        self.state.available_drivers.append(last_pick.driver_name)
-        self.state.available_drivers.sort()
-        self.state.current_pick_index -= 1
+            last_pick = self.state.picks.pop()
+            self.state.available_drivers.append(last_pick.driver_name)
+            self.state.available_drivers.sort()
+            self.state.current_pick_index -= 1
 
-        if self.state.status == DraftStatus.COMPLETED:
-            self.state.status = DraftStatus.IN_PROGRESS
-        if not self.state.picks and self.state.status == DraftStatus.IN_PROGRESS:
-            self.state.status = DraftStatus.ORDER_SET
+            if self.state.status == DraftStatus.COMPLETED:
+                self.state.status = DraftStatus.IN_PROGRESS
+            if not self.state.picks and self.state.status == DraftStatus.IN_PROGRESS:
+                self.state.status = DraftStatus.ORDER_SET
 
-        self._save()
-        logger.info(f"Undid pick: {last_pick.player_name} → {last_pick.driver_name}")
-        return self.state
+            self._save()
+            logger.info(f"Undid pick: {last_pick.player_name} → {last_pick.driver_name}")
+            return self.state
 
     def reset_draft(self) -> DraftState:
         """Reset the draft back to NOT_STARTED."""
-        self.state = DraftState()
-        self._save()
+        with self._lock:
+            self.state = DraftState()
+            self._save()
         logger.info("Draft reset to NOT_STARTED")
         return self.state
 
@@ -263,4 +306,5 @@ class DraftManager:
             "picks_by_player": self.state.picks_by_player,
             "is_complete": self.state.is_complete,
             "pick_order": self.state.pick_order,
+            "revision": self.state.revision,
         }
