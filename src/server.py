@@ -35,7 +35,7 @@ from datetime import date as dt_date, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from src.config import Config, HALFWAY_ROUND
@@ -184,6 +184,13 @@ app = FastAPI(title="F1 2026 Fantasy Draft", lifespan=lifespan)
 _static_dir = Path(__file__).resolve().parent.parent / "static"
 if _static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
+
+
+# ─── HEALTH CHECK (Render probes with HEAD /) ────────────────────────────────
+
+@app.head("/")
+async def health_check():
+    return Response(status_code=200)
 
 
 # ─── PAGES ───────────────────────────────────────────────────────────────────
@@ -577,6 +584,16 @@ async def get_calendar():
     today = dt_date.today()
     api = _app_state.get("openf1_api")
     
+    # Pre-fetch meetings ONCE (not per-race) and only if needed
+    meetings_by_name: dict = {}
+    upcoming_races = [r for r in CALENDAR_2026 if dt_date.fromisoformat(r["date"]) >= today]
+    if api and upcoming_races:
+        try:
+            all_meetings = api.fetch_meetings(year=2026)
+            meetings_by_name = {m.get("meeting_official_name"): m for m in all_meetings}
+        except Exception as e:
+            logger.debug(f"Could not fetch meetings for calendar: {e}")
+
     calendar_with_details = []
     for r in CALENDAR_2026:
         race_date = dt_date.fromisoformat(r["date"])
@@ -588,12 +605,9 @@ async def get_calendar():
         api_data_found = False
         
         if api and is_upcoming:
-            try:
-                # Find the meeting for this round
-                meetings = api.fetch_meetings(year=2026)
-                meeting = next((m for m in meetings if m.get("meeting_official_name") == r["name"]), None)
-                
-                if meeting:
+            meeting = meetings_by_name.get(r["name"])
+            if meeting:
+                try:
                     raw_sessions = api.fetch_sessions(meeting.get("meeting_key"))
                     if raw_sessions:
                         api_data_found = True
@@ -616,8 +630,8 @@ async def get_calendar():
                                     "time": session_time,
                                     "source": "api"
                                 })
-            except Exception as e:
-                logger.debug(f"Could not fetch session details for {r['name']}: {e}")
+                except Exception as e:
+                    logger.debug(f"Could not fetch session details for {r['name']}: {e}")
         
         # If no API data found and race is upcoming, use pre-seeded data
         if not api_data_found and is_upcoming and r["name"] in PRESEEDED_SESSION_TIMES:
