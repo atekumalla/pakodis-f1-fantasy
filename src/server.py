@@ -955,7 +955,12 @@ def _do_sync(state: dict):
     # but the OpenF1 API uses REAL session_keys (like 9876, 9877...).
     # We must track which (round_number, session_type) combos we already have,
     # and also pass real API keys to exclude_keys for sessions we got from the API previously.
-    existing_identities = {(s.round_number, s.session_type.value) for s in existing_sessions}
+    # Only exclude sessions that actually have results — empty-result sessions
+    # should be retried so incremental sync can fill in results when the API has them.
+    existing_identities = {
+        (s.round_number, s.session_type.value) for s in existing_sessions
+        if s.results  # don't exclude sessions with empty results
+    }
     
     # Collect real API session keys (non-synthetic ones, i.e. not round*100+offset)
     # Synthetic keys are always < 3000 (max round 24 * 100 + 3 = 2403)

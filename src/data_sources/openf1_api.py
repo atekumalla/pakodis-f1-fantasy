@@ -441,8 +441,10 @@ class OpenF1API:
                     logger.warning(f"Failed to fetch results for {gp_name} {session_name}: {e}")
 
                 if not results:
-                    logger.info(f"No results for {gp_name} {session_name} (skipping)")
-                    continue
+                    logger.info(
+                        f"No results for {gp_name} {session_name} "
+                        "(including with empty results — will retry on next sync)"
+                    )
 
                 session = Session(
                     session_key=session_key,
