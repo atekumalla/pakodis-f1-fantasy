@@ -45,11 +45,28 @@ IGNORED_SESSIONS = {"Practice 1", "Practice 2", "Practice 3", "Sprint Qualifying
 class OpenF1API:
     """Client for the OpenF1 REST API."""
 
+    # In-memory TTL cache: avoids redundant API calls within the same process.
+    # Keyed by (method, *args), value is (timestamp, data).
+    _cache: dict[tuple, tuple[float, object]] = {}
+    _CACHE_TTL: float = 30 * 60  # 30 minutes
+
     def __init__(self, base_url: str | None = None):
         self.base_url = (base_url or Config.OPENF1_BASE_URL).rstrip("/")
         self._driver_cache: dict[int, Driver] = {}
         self._last_request_time: float = 0
         self._min_interval: float = 2.1  # ~28 req/min (API limit is 30 req/min)
+
+    # ── Cache helpers ─────────────────────────────────────────────────
+
+    def _cache_get(self, key: tuple):
+        """Return cached data if still fresh, else None."""
+        entry = self._cache.get(key)
+        if entry and (time.time() - entry[0]) < self._CACHE_TTL:
+            return entry[1]
+        return None
+
+    def _cache_set(self, key: tuple, data):
+        self._cache[key] = (time.time(), data)
 
     def _rate_limit(self):
         """Ensure we don't exceed API rate limits (30 req/min)."""
@@ -97,16 +114,14 @@ class OpenF1API:
     def fetch_season_meetings(
         self, year: int | None = None, include_testing: bool = False
     ) -> list[dict]:
-        """Fetch all GP weekends for a season.
-        
-        Args:
-            year: Season year (defaults to Config.F1_SEASON_YEAR)
-            include_testing: If True, include pre-season testing events
-            
-        Returns:
-            List of meeting dicts. Each meeting has an 'is_cancelled' field.
-        """
+        """Fetch all GP weekends for a season (cached for 30 min)."""
         year = year or Config.F1_SEASON_YEAR
+        cache_key = ("meetings", year, include_testing)
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            logger.debug(f"Using cached meetings for {year}")
+            return cached
+
         meetings = self._get("meetings", {"year": year})
         
         # Filter out pre-season testing events unless requested
@@ -124,11 +139,18 @@ class OpenF1API:
             f"Fetched {total} meetings for {year} "
             f"({active} active, {canceled} canceled)"
         )
+        self._cache_set(cache_key, meetings)
         return meetings
 
     def fetch_sessions(self, meeting_key: int) -> list[dict]:
-        """Fetch all sessions for a GP weekend."""
-        return self._get("sessions", {"meeting_key": meeting_key})
+        """Fetch all sessions for a GP weekend (cached for 30 min)."""
+        cache_key = ("sessions", meeting_key)
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            return cached
+        data = self._get("sessions", {"meeting_key": meeting_key})
+        self._cache_set(cache_key, data)
+        return data
 
     def fetch_drivers(self, session_key: int) -> list[Driver]:
         """Fetch driver info for a session and cache it."""

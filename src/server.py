@@ -85,6 +85,7 @@ async def lifespan(app: FastAPI):
         "draft_manager": None,
         "players": get_initial_players(),
         "sessions": [],
+        "session_times": {},
         "calendar": [],
     }
 
@@ -99,6 +100,7 @@ async def lifespan(app: FastAPI):
         try:
             from src.sheets.results import read_results
             from src.sheets.draft_state import SheetsDraftBackend
+            from src.sheets.session_times import read_session_times
 
             state["sheets_client"] = SheetsClient()
             state["players"] = read_draft_picks(state["sheets_client"])
@@ -106,6 +108,9 @@ async def lifespan(app: FastAPI):
             
             # Load historical results from sheets (source of truth)
             state["sessions"] = read_results(state["sheets_client"])
+
+            # Load cached session times (avoids API calls on page load)
+            state["session_times"] = read_session_times(state["sheets_client"])
 
             # Durable draft persistence (survives Render redeploys/restarts).
             draft_backend = SheetsDraftBackend(state["sheets_client"])
@@ -577,22 +582,18 @@ async def get_standings():
 
 @app.get("/api/calendar")
 async def get_calendar():
-    """Get full calendar with upcoming races including session times."""
+    """Get full calendar with upcoming races including session times.
+    
+    Uses cached session times from Google Sheets — NO OpenF1 API calls.
+    Times are refreshed during the periodic background sync.
+    """
     from src.seed_data import CALENDAR_2026, RACE_COUNTRY_FLAGS, PRESEEDED_SESSION_TIMES
     from datetime import datetime, date as dt_date, timedelta
     
     today = dt_date.today()
-    api = _app_state.get("openf1_api")
     
-    # Pre-fetch meetings ONCE (not per-race) and only if needed
-    meetings_by_name: dict = {}
-    upcoming_races = [r for r in CALENDAR_2026 if dt_date.fromisoformat(r["date"]) >= today]
-    if api and upcoming_races:
-        try:
-            all_meetings = api.fetch_meetings(year=2026)
-            meetings_by_name = {m.get("meeting_official_name"): m for m in all_meetings}
-        except Exception as e:
-            logger.debug(f"Could not fetch meetings for calendar: {e}")
+    # Use cached session times (loaded from sheets on startup, refreshed during sync)
+    cached_times: dict[str, list[dict]] = _app_state.get("session_times", {})
 
     calendar_with_details = []
     for r in CALENDAR_2026:
@@ -600,64 +601,33 @@ async def get_calendar():
         is_past = race_date < today
         is_upcoming = race_date >= today
         
-        # Get session details from API if available, otherwise use pre-seeded data
         sessions_info = []
-        api_data_found = False
         
-        if api and is_upcoming:
-            meeting = meetings_by_name.get(r["name"])
-            if meeting:
-                try:
-                    raw_sessions = api.fetch_sessions(meeting.get("meeting_key"))
-                    if raw_sessions:
-                        api_data_found = True
-                        for s in raw_sessions:
-                            session_name = s.get("session_name", "")
-                            date_start = s.get("date_start", "")
-                            
-                            # Parse datetime and convert to local time (browser will handle this)
-                            session_time = ""
-                            if date_start:
-                                try:
-                                    dt = datetime.fromisoformat(date_start.replace("Z", "+00:00"))
-                                    session_time = dt.isoformat()
-                                except:
-                                    pass
-                            
-                            if session_name in ["Practice 1", "Practice 2", "Practice 3", "Qualifying", "Sprint", "Sprint Shootout", "Race"]:
-                                sessions_info.append({
-                                    "name": session_name,
-                                    "time": session_time,
-                                    "source": "api"
-                                })
-                except Exception as e:
-                    logger.debug(f"Could not fetch session details for {r['name']}: {e}")
-        
-        # If no API data found and race is upcoming, use pre-seeded data
-        if not api_data_found and is_upcoming and r["name"] in PRESEEDED_SESSION_TIMES:
-            preseeded = PRESEEDED_SESSION_TIMES[r["name"]]
-            race_date_obj = dt_date.fromisoformat(preseeded["date"])
-            
-            for session in preseeded["sessions"]:
-                # Calculate session date based on day offset from race day
-                session_date = race_date_obj + timedelta(days=session["day_offset"])
-                # Parse time and create datetime in PST (UTC-8)
-                time_parts = session["time"].split(":")
-                hour = int(time_parts[0])
-                minute = int(time_parts[1]) if len(time_parts) > 1 else 0
+        if is_upcoming:
+            # 1. Try cached times from sheets (populated by sync)
+            if r["name"] in cached_times:
+                sessions_info = cached_times[r["name"]]
+            # 2. Fall back to pre-seeded data
+            elif r["name"] in PRESEEDED_SESSION_TIMES:
+                preseeded = PRESEEDED_SESSION_TIMES[r["name"]]
+                race_date_obj = dt_date.fromisoformat(preseeded["date"])
                 
-                # Create datetime in PST (UTC-8)
-                session_datetime = datetime(session_date.year, session_date.month, session_date.day, hour, minute)
-                # Convert PST to UTC for storage
-                from datetime import timezone
-                pst_offset = timedelta(hours=-8)
-                session_datetime_utc = session_datetime.replace(tzinfo=timezone(pst_offset)).astimezone(timezone.utc)
-                
-                sessions_info.append({
-                    "name": session["name"],
-                    "time": session_datetime_utc.isoformat(),
-                    "source": "preseeded"
-                })
+                for session in preseeded["sessions"]:
+                    session_date = race_date_obj + timedelta(days=session["day_offset"])
+                    time_parts = session["time"].split(":")
+                    hour = int(time_parts[0])
+                    minute = int(time_parts[1]) if len(time_parts) > 1 else 0
+                    
+                    session_datetime = datetime(session_date.year, session_date.month, session_date.day, hour, minute)
+                    from datetime import timezone
+                    pst_offset = timedelta(hours=-8)
+                    session_datetime_utc = session_datetime.replace(tzinfo=timezone(pst_offset)).astimezone(timezone.utc)
+                    
+                    sessions_info.append({
+                        "name": session["name"],
+                        "time": session_datetime_utc.isoformat(),
+                        "source": "preseeded"
+                    })
         
         calendar_with_details.append({
             **r,
@@ -1059,8 +1029,85 @@ def _do_sync(state: dict):
                 state_mgr.mark_session_scored(s.session_key)
         state_mgr.mark_synced()
 
+    # Refresh cached session times for upcoming races (piggybacks on sync)
+    _refresh_session_times(state)
+
     logger.info(f"Sync completed: {len(new_sessions)} new sessions, "
                 f"{len(all_sessions)} total tracked")
+
+
+def _refresh_session_times(state: dict):
+    """Fetch upcoming session times from OpenF1 API and cache in sheets.
+    
+    Called during background sync so /api/calendar never needs to hit the API.
+    Uses the in-memory TTL cache in OpenF1API, so repeated syncs within 30 min
+    won't make redundant API calls.
+    """
+    from src.seed_data import CALENDAR_2026
+    from src.sheets.session_times import write_session_times
+    from datetime import datetime, date as dt_date
+
+    openf1 = state.get("openf1_api")
+    sheets_client = state.get("sheets_client")
+    if not openf1 or not sheets_client:
+        return
+
+    today = dt_date.today()
+    upcoming = [r for r in CALENDAR_2026 if dt_date.fromisoformat(r["date"]) >= today]
+    if not upcoming:
+        return
+
+    try:
+        all_meetings = openf1.fetch_season_meetings()
+        meetings_by_name = {m.get("meeting_official_name"): m for m in all_meetings}
+    except Exception as e:
+        logger.debug(f"Could not fetch meetings for session times: {e}")
+        return
+
+    RELEVANT_SESSIONS = {
+        "Practice 1", "Practice 2", "Practice 3",
+        "Qualifying", "Sprint", "Sprint Shootout", "Race",
+    }
+
+    times_by_gp: dict[str, list[dict]] = {}
+    for r in upcoming:
+        meeting = meetings_by_name.get(r["name"])
+        if not meeting:
+            continue
+        try:
+            raw_sessions = openf1.fetch_sessions(meeting.get("meeting_key"))
+            if not raw_sessions:
+                continue
+            sessions_info = []
+            for s in raw_sessions:
+                session_name = s.get("session_name", "")
+                if session_name not in RELEVANT_SESSIONS:
+                    continue
+                date_start = s.get("date_start", "")
+                session_time = ""
+                if date_start:
+                    try:
+                        dt = datetime.fromisoformat(date_start.replace("Z", "+00:00"))
+                        session_time = dt.isoformat()
+                    except Exception:
+                        pass
+                sessions_info.append({
+                    "name": session_name,
+                    "time": session_time,
+                    "source": "cached",
+                })
+            if sessions_info:
+                times_by_gp[r["name"]] = sessions_info
+        except Exception as e:
+            logger.debug(f"Could not fetch sessions for {r['name']}: {e}")
+
+    if times_by_gp:
+        try:
+            write_session_times(sheets_client, times_by_gp)
+            state["session_times"] = times_by_gp
+            logger.info(f"Refreshed session times for {len(times_by_gp)} upcoming GPs")
+        except Exception as e:
+            logger.warning(f"Failed to write session times to sheet: {e}")
 
 
 def _do_force_sync(state: dict):
@@ -1115,6 +1162,8 @@ def _do_force_sync(state: dict):
                 state_mgr.mark_session_scored(s.session_key)
         state_mgr.mark_synced()
         state_mgr.save()
+
+    _refresh_session_times(state)
 
     logger.info(f"Force sync completed: {len(all_sessions)} sessions tracked")
 
