@@ -11,6 +11,7 @@ Endpoints:
   GET  /draft               → Mid-season draft UI
   GET  /api/status          → Leaderboard, last sync, recent results
   POST /api/sync            → Incremental sync (new sessions only)
+  POST /api/reload          → Reload sessions from Google Sheets (no API calls)
   POST /api/sync/force      → Full sync (re-fetch all from API)
   GET  /api/share-text      → Formatted standings for WhatsApp
   GET  /api/drivers         → All 20 drivers with teams
@@ -378,6 +379,29 @@ async def trigger_sync():
     except Exception as e:
         logger.error(f"Sync failed: {e}", exc_info=True)
         raise HTTPException(500, f"Sync failed: {str(e)}")
+
+
+@app.post("/api/reload")
+async def reload_from_sheets(x_admin_token: str | None = Header(default=None)):
+    """Reload session results from Google Sheets into memory (no API calls).
+
+    Use this when the sheet has been manually edited and you want the app to
+    reflect those changes without a full restart or API sync.
+    Protected by ADMIN_PASSWORD (sent via the ``X-Admin-Token`` header).
+    """
+    _require_admin(x_admin_token)
+    sheets_client = _app_state.get("sheets_client")
+    if not sheets_client:
+        raise HTTPException(503, "No Google Sheets client available")
+    try:
+        from src.sheets.results import read_results
+        sessions = read_results(sheets_client)
+        _app_state["sessions"] = sessions
+        logger.info(f"Reloaded {len(sessions)} sessions from sheets")
+        return {"status": "ok", "message": f"Reloaded {len(sessions)} sessions from sheets"}
+    except Exception as e:
+        logger.error(f"Reload from sheets failed: {e}", exc_info=True)
+        raise HTTPException(500, f"Reload failed: {str(e)}")
 
 
 @app.post("/api/sync/force")
