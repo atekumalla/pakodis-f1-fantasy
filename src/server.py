@@ -42,6 +42,7 @@ from fastapi.staticfiles import StaticFiles
 from src.config import Config, HALFWAY_ROUND
 from src.models.session import Session, SessionStatus
 from src.models.player import DraftPlayer
+from src.draft.manager import DraftStatus
 from src.scoring.calculator import ScoringCalculator
 from src.scoring.rules import DEFAULT_RULES
 from src.seed_data import (
@@ -720,6 +721,40 @@ async def get_draft_status(demo: bool = False):
     return draft_mgr.get_status()
 
 
+@app.post("/api/draft/claim-player")
+async def claim_player(body: dict):
+    """
+    Claim a player and receive their authentication token.
+    
+    This endpoint is called when a player selects themselves on the draft page.
+    Returns the persistent token for that player (same across devices/browsers).
+    """
+    demo = body.get("demo", False)
+    player_name = body.get("player_name", "").strip()
+    
+    if not player_name:
+        raise HTTPException(400, "player_name is required")
+    
+    draft_mgr = _get_draft_manager(demo)
+    
+    if draft_mgr.state.status == DraftStatus.NOT_STARTED:
+        raise HTTPException(400, "Draft has not started yet")
+    
+    if player_name not in draft_mgr.state.player_tokens:
+        raise HTTPException(400, f"Unknown player: {player_name}")
+    
+    token = draft_mgr.state.player_tokens[player_name]
+    logger.info(f"Player {player_name} claimed with token (prefix: {token[:8]})")
+    
+    return {
+        "player_name": player_name,
+        "token": token,
+    }
+
+
+
+
+
 @app.post("/api/draft/start")
 async def start_draft(body: dict):
     """
@@ -748,19 +783,23 @@ async def start_draft(body: dict):
 async def make_draft_pick(body: dict):
     """
     Make a draft pick.
-    Body: { "player_name": "Abhinav", "driver_name": "Charles Leclerc" }
+    Body: { "player_name": "Abhinav", "driver_name": "Charles Leclerc", "token": "..." }
     Add "demo": true to run in the isolated demo sandbox.
     """
     draft_mgr = _get_draft_manager(body.get("demo", False))
 
     player = body.get("player_name")
     driver = body.get("driver_name")
+    token = body.get("token", "")
 
     if not player or not driver:
         raise HTTPException(400, "player_name and driver_name are required")
 
+    if not token:
+        raise HTTPException(401, "token is required. Please claim your player identity first.")
+
     try:
-        draft_mgr.make_pick(player, driver)
+        draft_mgr.make_pick(player, driver, token)
         return draft_mgr.get_status()
     except ValueError as e:
         raise HTTPException(400, str(e))
@@ -814,8 +853,9 @@ async def simulate_draft_pick(body: dict | None = None):
 
     import random
     driver = random.choice(st.available_drivers)
+    token = st.player_tokens.get(picker, "")  # Get token for this player
     try:
-        draft_mgr.make_pick(picker, driver)
+        draft_mgr.make_pick(picker, driver, token)
         return draft_mgr.get_status()
     except ValueError as e:
         raise HTTPException(400, str(e))
@@ -834,9 +874,18 @@ async def finalize_draft(body: dict | None = None):
     if not draft_mgr.state.is_complete:
         raise HTTPException(400, "Draft is not yet complete")
 
+    if draft_mgr.state.finalized_to_sheets:
+        return {
+            "status": "finalized",
+            "picks_by_player": draft_mgr.state.picks_by_player,
+            "message": "H2 draft already finalized to Sheets.",
+        }
+
     picks_by_player = draft_mgr.state.picks_by_player
 
     if is_demo:
+        draft_mgr.state.finalized_to_sheets = True
+        draft_mgr._save()
         return {
             "status": "finalized",
             "picks_by_player": picks_by_player,
@@ -852,7 +901,7 @@ async def finalize_draft(body: dict | None = None):
         if player.name in picks_by_player:
             player.drivers_h2 = picks_by_player[player.name]
 
-    # Save to Google Sheets
+    # Save to Google Sheets FIRST (before marking finalized)
     if sheets_client:
         from src.sheets.players import write_draft_picks_h2
         try:
@@ -863,6 +912,10 @@ async def finalize_draft(body: dict | None = None):
             raise HTTPException(500, f"Failed to save to sheets: {str(e)}")
     else:
         logger.warning("No sheets client — H2 picks saved in memory only")
+
+    # Only mark finalized after successful sheets write
+    draft_mgr.state.finalized_to_sheets = True
+    draft_mgr._save()
 
     return {
         "status": "finalized",

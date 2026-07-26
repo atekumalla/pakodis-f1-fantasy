@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import secrets
 import threading
 from datetime import datetime, timezone
 from enum import Enum
@@ -55,6 +56,8 @@ class DraftState(BaseModel):
     created_at: str = ""
     completed_at: str = ""
     revision: int = 0                                          # Bumped on every save; used for polling
+    finalized_to_sheets: bool = False                           # True only after successful sheets write
+    player_tokens: dict[str, str] = Field(default_factory=dict)  # player_name -> token mapping
 
     @property
     def current_picker(self) -> Optional[str]:
@@ -195,6 +198,10 @@ class DraftManager:
             pick_order = generate_custom_snake_order(base_order, total_picks=total_picks)
 
         with self._lock:
+            # Generate a unique token for each player
+            player_tokens = {
+                name: secrets.token_urlsafe(16) for name in player_names
+            }
             self.state = DraftState(
                 status=DraftStatus.ORDER_SET,
                 player_names=list(player_names),
@@ -205,21 +212,54 @@ class DraftManager:
                 current_pick_index=0,
                 total_picks=total_picks,
                 created_at=datetime.now(timezone.utc).isoformat(),
+                player_tokens=player_tokens,
             )
             self._save()
         logger.info(f"Draft started! Order: {base_order} ({total_picks} picks)")
         return self.state
 
-    def make_pick(self, player_name: str, driver_name: str) -> DraftState:
+    def claim_player(self, player_name: str) -> str:
+        """
+        Claim a player identity and return their token.
+        Token must be included in all subsequent pick requests.
+        
+        Args:
+            player_name: The player to claim.
+            
+        Returns:
+            The token for this player.
+            
+        Raises:
+            ValueError: If player not in draft or draft not started.
+        """
+        with self._lock:
+            if self.state.status == DraftStatus.NOT_STARTED:
+                raise ValueError("Draft hasn't started yet")
+            
+            if player_name not in self.state.player_names:
+                raise ValueError(f"{player_name} is not in this draft")
+            
+            token = self.state.player_tokens.get(player_name)
+            if not token:
+                # Generate token if missing (shouldn't happen, but defensive)
+                token = secrets.token_urlsafe(16)
+                self.state.player_tokens[player_name] = token
+                self._save()
+            
+            logger.info(f"Player {player_name} claimed draft (token: {token[:8]}...)")
+            return token
+
+    def make_pick(self, player_name: str, driver_name: str, token: str = "") -> DraftState:
         """
         Record a draft pick.
 
         Args:
             player_name: Who is making the pick.
             driver_name: Which driver they're picking.
+            token: Authentication token for this player.
 
         Raises:
-            ValueError: If it's not this player's turn, or driver is unavailable.
+            ValueError: If token invalid, it's not this player's turn, or driver is unavailable.
         """
         with self._lock:
             if self.state.status == DraftStatus.COMPLETED:
@@ -227,6 +267,12 @@ class DraftManager:
 
             if self.state.status == DraftStatus.NOT_STARTED:
                 raise ValueError("Draft hasn't started yet")
+
+            # Validate token
+            expected_token = self.state.player_tokens.get(player_name)
+            if not expected_token or token != expected_token:
+                logger.warning(f"Invalid token for player {player_name}")
+                raise ValueError("Invalid token. Please claim your player identity again.")
 
             expected = self.state.current_picker
             if player_name != expected:
@@ -261,8 +307,10 @@ class DraftManager:
                 logger.info("🏁 Draft completed!")
 
             self._save()
+            # Log with token prefix for accountability
+            token_preview = token[:8] if token else "unknown"
             logger.info(
-                f"Pick #{pick.pick_number}: {player_name} → {driver_name} "
+                f"Pick #{pick.pick_number}: {player_name} (token:{token_preview}) → {driver_name} "
                 f"({len(self.state.available_drivers)} remaining)"
             )
             return self.state
