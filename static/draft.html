@@ -107,6 +107,10 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 <header class="hdr">
   <div class="hdr-title"><span>F1</span> Mid-Season Draft</div>
   <div class="hdr-actions">
+    <div id="playerBadge" style="display:none;align-items:center;gap:.4rem;padding:.35rem .75rem;background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.85rem;letter-spacing:.03em">
+      <span style="font-size:.7rem;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.06em">You</span>
+      <span id="playerBadgeName"></span>
+    </div>
     <button class="btn btn-sec" id="btnShare" style="display:none" title="Share draft picks">📤 Share</button>
     <button class="btn btn-sec" id="btnUndo" style="display:none">↩ Undo</button>
     <button class="btn btn-sec" id="btnReset" style="display:none">🗑 Reset</button>
@@ -275,6 +279,7 @@ async function confirmPlayerSelection() {
     localStorage.setItem('draftPlayer', CURRENT_PLAYER);
     localStorage.setItem('draftToken', PLAYER_TOKEN);
     document.getElementById('confirmPlayerModal').classList.remove('show');
+    showPlayerBadge(CURRENT_PLAYER);
     await loadDraftStatus();
     startPolling();
     showToast(`✅ Playing as ${CURRENT_PLAYER}!`);
@@ -300,6 +305,7 @@ async function initializeDraft() {
   if (savedPlayer && savedToken && PLAYERS.includes(savedPlayer)) {
     CURRENT_PLAYER = savedPlayer;
     PLAYER_TOKEN = savedToken;
+    showPlayerBadge(CURRENT_PLAYER);
   } else {
     localStorage.removeItem('draftPlayer');
     localStorage.removeItem('draftToken');
@@ -313,6 +319,15 @@ function initializePlayerButtons() {
   container.innerHTML = PLAYERS.map(name => 
     `<button class="btn btn-sec" onclick="selectPlayer('${name}')" style="border-color:${PLAYER_COLORS[name]};color:${PLAYER_COLORS[name]};flex:1;min-width:100px">${name}</button>`
   ).join('');
+}
+
+function showPlayerBadge(playerName) {
+  const badge = document.getElementById('playerBadge');
+  const nameEl = document.getElementById('playerBadgeName');
+  if (!badge || !nameEl) return;
+  nameEl.textContent = playerName;
+  nameEl.style.color = PLAYER_COLORS[playerName] || 'var(--text)';
+  badge.style.display = 'flex';
 }
 
 async function loadDrivers() {
