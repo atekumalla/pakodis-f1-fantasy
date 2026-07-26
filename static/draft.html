@@ -48,6 +48,8 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .driver-tile{background:var(--surface2);border:2px solid var(--border);border-left:4px solid var(--team-color,var(--border));border-radius:.75rem;padding:.85rem;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;gap:.7rem}
 .driver-tile:hover:not(.picked){border-color:var(--red);border-left-color:var(--team-color,var(--red));transform:translateY(-2px);box-shadow:0 4px 12px rgba(225,6,0,.2)}
 .driver-tile.picked{opacity:.45;cursor:not-allowed;border-color:var(--divider);border-left-color:var(--divider)}
+.driver-tile.not-your-turn{opacity:.55;cursor:not-allowed;filter:grayscale(.4)}
+.driver-tile.not-your-turn:hover{transform:none;border-color:var(--border);box-shadow:none}
 .driver-tile.picked::after{content:attr(data-owner);position:absolute;top:4px;right:6px;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--surface);color:var(--muted);border:1px solid var(--border)}
 .driver-photo{width:46px;height:46px;border-radius:50%;object-fit:cover;background:var(--border);flex-shrink:0;border:2px solid var(--team-color,var(--border))}
 .driver-initials{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.85rem;font-family:'Barlow Condensed',sans-serif}
@@ -142,6 +144,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
     <div class="section">
       <div class="section-title">Available Drivers</div>
+      <div id="waitBanner" style="display:none;text-align:center;padding:.6rem 1rem;margin-bottom:.75rem;background:var(--surface2);border-radius:.5rem;border:1px solid var(--border);font-weight:600;font-size:.9rem;color:var(--muted)"></div>
       <div class="driver-grid" id="driverGrid"></div>
     </div>
 
@@ -389,6 +392,8 @@ function renderDraftBoard() {
   ).join('<span style="color:var(--faint);margin:0 .15rem">→</span>');
 
   // Driver grid
+  const cp = draftState.current_picker;
+  const isMyTurn = CURRENT_PLAYER && cp && CURRENT_PLAYER === cp;
   const picked = new Set(draftState.picks.map(p => p.driver_name));
   const pickOwner = {};
   draftState.picks.forEach(p => { pickOwner[p.driver_name] = p.player_name; });
@@ -406,7 +411,7 @@ function renderDraftBoard() {
     const photoHtml = headshotUrl
       ? `<img class="driver-photo" src="${headshotUrl}" alt="${d.name}" onerror="this.outerHTML='<div class=\\'driver-photo driver-initials\\' style=\\'background:#${teamColor}\\'>${initials}</div>'">`
       : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
-    return `<div class="driver-tile ${isPicked ? 'picked' : ''}" style="--team-color:#${teamColor}" data-driver="${d.name}" data-team="${d.team}" data-owner="${isPicked ? pickOwner[d.name] : ''}">
+    return `<div class="driver-tile ${isPicked ? 'picked' : (!isMyTurn ? 'not-your-turn' : '')}" style="--team-color:#${teamColor}" data-driver="${d.name}" data-team="${d.team}" data-owner="${isPicked ? pickOwner[d.name] : ''}">
       ${photoHtml}
       <div class="driver-info">
         <div class="driver-name-row">
@@ -422,12 +427,26 @@ function renderDraftBoard() {
     </div>`;
   }).join('');
 
-  grid.querySelectorAll('.driver-tile:not(.picked)').forEach(tile => {
+  grid.querySelectorAll('.driver-tile:not(.picked):not(.not-your-turn)').forEach(tile => {
     tile.addEventListener('click', () => {
       pendingPick = { driver: tile.dataset.driver, team: tile.dataset.team };
       showConfirmModal();
     });
   });
+
+  // Show a waiting banner if it's not your turn
+  const waitBanner = document.getElementById('waitBanner');
+  if (waitBanner) {
+    if (!isMyTurn && cp && CURRENT_PLAYER) {
+      waitBanner.textContent = `⏳ Waiting for ${cp} to pick…`;
+      waitBanner.style.display = '';
+    } else if (isMyTurn) {
+      waitBanner.textContent = '🟢 Your turn — pick a driver!';
+      waitBanner.style.display = '';
+    } else {
+      waitBanner.style.display = 'none';
+    }
+  }
 
   // Picks panel
   renderPicksPanel('picksPanel');
