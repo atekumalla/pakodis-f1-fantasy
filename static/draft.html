@@ -282,14 +282,21 @@ async function confirmPlayerSelection() {
 }
 
 async function initializeDraft() {
+  // Always load status first so we know the draft state before showing any modals
+  await loadDraftStatus();
+  startPolling();
+
+  const status = draftState && draftState.status;
+
+  // Don't prompt for identity until the draft has actually started
+  if (status === 'not_started') return;
+
   const savedPlayer = localStorage.getItem('draftPlayer');
   const savedToken = localStorage.getItem('draftToken');
-  
+
   if (savedPlayer && savedToken && PLAYERS.includes(savedPlayer)) {
     CURRENT_PLAYER = savedPlayer;
     PLAYER_TOKEN = savedToken;
-    await loadDraftStatus();
-    startPolling();
   } else {
     localStorage.removeItem('draftPlayer');
     localStorage.removeItem('draftToken');
@@ -325,9 +332,21 @@ async function pollDraftStatus() {
     if (!r.ok) return;
     const next = await r.json();
     if (next.revision == null || next.revision !== lastRevision) {
+      const prevStatus = draftState && draftState.status;
       lastRevision = next.revision != null ? next.revision : lastRevision;
       draftState = next;
       renderDraft();
+      // Draft just started — prompt player to identify themselves if not already done
+      if (prevStatus === 'not_started' && next.status !== 'not_started' && !PLAYER_TOKEN) {
+        const savedPlayer = localStorage.getItem('draftPlayer');
+        const savedToken = localStorage.getItem('draftToken');
+        if (savedPlayer && savedToken && PLAYERS.includes(savedPlayer)) {
+          CURRENT_PLAYER = savedPlayer;
+          PLAYER_TOKEN = savedToken;
+        } else {
+          showPlayerSelectionModal();
+        }
+      }
     }
   } catch (e) { /* transient network error — keep polling */ }
 }
