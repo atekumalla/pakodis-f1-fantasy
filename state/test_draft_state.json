@@ -32,147 +32,144 @@
     "Prateik",
     "Abhinav",
     "Rohit",
-    "Anup",
-    "Anup",
-    "Rohit"
+    "Anup"
   ],
   "picks": [
     {
       "pick_number": 1,
       "player_name": "Prateik",
       "driver_name": "Max Verstappen",
-      "timestamp": "2026-07-01T05:30:29.738126+00:00"
+      "timestamp": "2026-07-26T16:28:06.301300+00:00"
     },
     {
       "pick_number": 2,
       "player_name": "Abhinav",
       "driver_name": "Kimi Antonelli",
-      "timestamp": "2026-07-01T05:30:29.738779+00:00"
+      "timestamp": "2026-07-26T16:28:06.302924+00:00"
     },
     {
       "pick_number": 3,
       "player_name": "Rohit",
       "driver_name": "Lewis Hamilton",
-      "timestamp": "2026-07-01T05:30:29.739380+00:00"
+      "timestamp": "2026-07-26T16:28:06.304046+00:00"
     },
     {
       "pick_number": 4,
       "player_name": "Anup",
-      "driver_name": "Lando Norris",
-      "timestamp": "2026-07-01T05:30:29.743936+00:00"
+      "driver_name": "Alex Albon",
+      "timestamp": "2026-07-26T16:28:06.305878+00:00"
     },
     {
       "pick_number": 5,
       "player_name": "Anup",
-      "driver_name": "Franco Colapinto",
-      "timestamp": "2026-07-01T05:30:29.744510+00:00"
+      "driver_name": "George Russell",
+      "timestamp": "2026-07-26T16:28:06.307812+00:00"
     },
     {
       "pick_number": 6,
       "player_name": "Rohit",
-      "driver_name": "Lance Stroll",
-      "timestamp": "2026-07-01T05:30:29.745102+00:00"
+      "driver_name": "Carlos Sainz",
+      "timestamp": "2026-07-26T16:28:06.308242+00:00"
     },
     {
       "pick_number": 7,
       "player_name": "Abhinav",
-      "driver_name": "Esteban Ocon",
-      "timestamp": "2026-07-01T05:30:29.746134+00:00"
+      "driver_name": "Isack Hadjar",
+      "timestamp": "2026-07-26T16:28:06.308621+00:00"
     },
     {
       "pick_number": 8,
       "player_name": "Prateik",
-      "driver_name": "Oscar Piastri",
-      "timestamp": "2026-07-01T05:30:29.748046+00:00"
+      "driver_name": "Liam Lawson",
+      "timestamp": "2026-07-26T16:28:06.309013+00:00"
     },
     {
       "pick_number": 9,
       "player_name": "Prateik",
-      "driver_name": "Alex Albon",
-      "timestamp": "2026-07-01T05:30:29.748755+00:00"
+      "driver_name": "Fernando Alonso",
+      "timestamp": "2026-07-26T16:28:06.309398+00:00"
     },
     {
       "pick_number": 10,
       "player_name": "Abhinav",
       "driver_name": "Pierre Gasly",
-      "timestamp": "2026-07-01T05:30:29.750832+00:00"
+      "timestamp": "2026-07-26T16:28:06.309870+00:00"
     },
     {
       "pick_number": 11,
       "player_name": "Rohit",
-      "driver_name": "Fernando Alonso",
-      "timestamp": "2026-07-01T05:30:29.754507+00:00"
+      "driver_name": "Lando Norris",
+      "timestamp": "2026-07-26T16:28:06.310459+00:00"
     },
     {
       "pick_number": 12,
       "player_name": "Anup",
-      "driver_name": "Nico Hulkenberg",
-      "timestamp": "2026-07-01T05:30:29.757589+00:00"
+      "driver_name": "Gabriel Bortoleto",
+      "timestamp": "2026-07-26T16:28:06.313667+00:00"
     },
     {
       "pick_number": 13,
       "player_name": "Anup",
-      "driver_name": "Sergio Perez",
-      "timestamp": "2026-07-01T05:30:29.758966+00:00"
+      "driver_name": "Oliver Bearman",
+      "timestamp": "2026-07-26T16:28:06.314191+00:00"
     },
     {
       "pick_number": 14,
       "player_name": "Rohit",
-      "driver_name": "Oliver Bearman",
-      "timestamp": "2026-07-01T05:30:29.760286+00:00"
+      "driver_name": "Sergio Perez",
+      "timestamp": "2026-07-26T16:28:06.314649+00:00"
     },
     {
       "pick_number": 15,
       "player_name": "Abhinav",
-      "driver_name": "Valtteri Bottas",
-      "timestamp": "2026-07-01T05:30:29.762061+00:00"
+      "driver_name": "Charles Leclerc",
+      "timestamp": "2026-07-26T16:28:06.315107+00:00"
     },
     {
       "pick_number": 16,
       "player_name": "Prateik",
-      "driver_name": "Isack Hadjar",
-      "timestamp": "2026-07-01T05:30:29.762825+00:00"
+      "driver_name": "Lance Stroll",
+      "timestamp": "2026-07-26T16:28:06.315563+00:00"
     },
     {
       "pick_number": 17,
       "player_name": "Prateik",
-      "driver_name": "Carlos Sainz",
-      "timestamp": "2026-07-01T05:30:29.763379+00:00"
+      "driver_name": "Nico Hulkenberg",
+      "timestamp": "2026-07-26T16:28:06.316080+00:00"
     },
     {
       "pick_number": 18,
       "player_name": "Abhinav",
-      "driver_name": "Gabriel Bortoleto",
-      "timestamp": "2026-07-01T05:30:29.763896+00:00"
+      "driver_name": "Franco Colapinto",
+      "timestamp": "2026-07-26T16:28:06.316687+00:00"
     },
     {
       "pick_number": 19,
       "player_name": "Rohit",
-      "driver_name": "Liam Lawson",
-      "timestamp": "2026-07-01T05:30:29.766757+00:00"
+      "driver_name": "Arvid Lindblad",
+      "timestamp": "2026-07-26T16:28:06.317187+00:00"
     },
     {
       "pick_number": 20,
       "player_name": "Anup",
-      "driver_name": "Charles Leclerc",
-      "timestamp": "2026-07-01T05:30:29.769603+00:00"
-    },
-    {
-      "pick_number": 21,
-      "player_name": "Anup",
-      "driver_name": "George Russell",
-      "timestamp": "2026-07-01T05:30:29.774012+00:00"
-    },
-    {
-      "pick_number": 22,
-      "player_name": "Rohit",
-      "driver_name": "Arvid Lindblad",
-      "timestamp": "2026-07-01T05:30:29.774744+00:00"
+      "driver_name": "Oscar Piastri",
+      "timestamp": "2026-07-26T16:28:06.318117+00:00"
     }
   ],
-  "available_drivers": [],
-  "current_pick_index": 22,
-  "total_picks": 22,
-  "created_at": "2026-07-01T05:30:29.736796+00:00",
-  "completed_at": "2026-07-01T05:30:29.774774+00:00"
+  "available_drivers": [
+    "Esteban Ocon",
+    "Valtteri Bottas"
+  ],
+  "current_pick_index": 20,
+  "total_picks": 20,
+  "created_at": "2026-07-26T16:28:06.299423+00:00",
+  "completed_at": "2026-07-26T16:28:06.318156+00:00",
+  "revision": 23,
+  "finalized_to_sheets": false,
+  "player_tokens": {
+    "Anup": "FthT5kilx2av_vtkQAtqtA",
+    "Rohit": "0gV-RIA6h0z7P0efkzH71Q",
+    "Abhinav": "Vo-SiLLaWjIypCY8swMMTw",
+    "Prateik": "sRr3McXCZo6QXeXOUMdjIA"
+  }
 }

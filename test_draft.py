@@ -89,11 +89,12 @@ def test_draft_workflow():
     for driver_name, comment in test_picks:
         current_picker = draft.state.current_picker
         pick_number = draft.state.current_pick_index + 1
+        token = draft.state.player_tokens.get(current_picker, "")
         
         logger.info(f"\nPick #{pick_number}: {current_picker}'s turn")
         logger.info(f"   Available drivers: {len(draft.state.available_drivers)}")
         
-        draft.state = draft.make_pick(player_name=current_picker, driver_name=driver_name)
+        draft.state = draft.make_pick(player_name=current_picker, driver_name=driver_name, token=token)
         logger.info(f"   ✅ {comment}")
         logger.info(f"   Pick recorded: {current_picker} → {driver_name}")
     
@@ -146,8 +147,9 @@ def test_draft_workflow():
         driver = random.choice(available)
         picker = draft.state.current_picker
         pick_num = draft.state.current_pick_index + 1
+        token = draft.state.player_tokens.get(picker, "")
         
-        draft.state = draft.make_pick(player_name=picker, driver_name=driver)
+        draft.state = draft.make_pick(player_name=picker, driver_name=driver, token=token)
         logger.info(f"Pick #{pick_num}: {picker} → {driver}")
     
     # Test 6: Final state

@@ -14,13 +14,15 @@ A Formula 1 fantasy draft app for the 2026 season. Four players each draft 5 F1 
   - Force sync option to re-fetch all data from API
 - **Mid-Season Redraft** — Interactive snake-draft UI for the halfway point (Round 12)
 - **Two-Half Scoring** — Separate driver ownership for H1 (Rounds 1-12) and H2 (Rounds 13-24)
+- **Token Authentication** — Each player gets a unique token at draft start; picks are server-verified
+- **Turn-Based RBAC** — Only the current picker can select a driver; enforced on both frontend and backend
 
 ### Web Interface
 - **Dashboard** — F1-themed web UI with real-time leaderboard and score trends
 - **Recent Results** — Session-by-session breakdown with driver points attribution
 - **Race Calendar** — Full 2026 season schedule with session status tracking
 - **Driver & Constructor Standings** — Live F1 championship tables
-- **Draft Portal** — Interactive snake-draft interface with undo/reset functionality
+- **Draft Portal** — Interactive snake-draft interface with player identity, turn guards, and undo
 - **WhatsApp Share** — One-click formatted standings for group chats
 
 ### Data Integrity
@@ -28,6 +30,7 @@ A Formula 1 fantasy draft app for the 2026 season. Four players each draft 5 F1 
 - **Recovery System** — Automatic reconciliation of incomplete or missing session data
 - **Error Handling** — Exponential backoff retry logic with rate limiting
 - **Sheet Validation** — Automatic worksheet creation and data formatting
+- **Durable Draft State** — Draft state persisted to Google Sheets (survives Render redeploys) with local disk fallback
 
 ## 📊 Players & H1 Draft
 
@@ -61,6 +64,19 @@ Round 5: 1 → 2 → 3 → 4
 ```
 
 Order is either randomized or manually set. The interactive draft UI is available at `/draft`.
+
+### Authentication & Access Control
+
+- Each player receives a **unique token** when the draft is started
+- Players identify themselves on the draft page; tokens are stored in `localStorage`
+- **Pick validation**: Backend verifies the token matches the current picker before accepting a pick
+- **Undo**: Only the player who made the last pick can undo it (using their token). Admins can undo any pick via `X-Admin-Token` header.
+- **Reset**: Admin-only — requires the `ADMIN_PASSWORD` environment variable, passed as `X-Admin-Token` header
+- **Stale token recovery**: If a draft is reset, the UI detects invalid tokens and re-prompts for identity
+
+### Persistence
+
+Draft state is dual-written to **local disk** (`state/draft_state.json`) and **Google Sheets** ("Draft State" tab as a JSON blob). On startup, the app loads from Sheets first (survives Render's ephemeral disk), falling back to the local file.
 
 ## 🚀 Quick Start
 
@@ -161,6 +177,9 @@ python -m src.server
    SYNC_LIVE_INTERVAL_SECONDS=120
    SYNC_TIMEZONE=Asia/Kolkata
    
+   # Admin password for protected actions (reset, force sync)
+   ADMIN_PASSWORD=your_secret_here
+   
    # Season Configuration
    HALFWAY_ROUND=12
    ```
@@ -171,6 +190,7 @@ python -m src.server
    ```bash
    GOOGLE_SHEETS_ID=your_spreadsheet_id_here
    GOOGLE_SHEETS_CREDENTIALS_JSON=<paste entire JSON file contents>
+   ADMIN_PASSWORD=your_secret_here
    ```
 2. To get the JSON as a single line:
    ```bash
@@ -190,6 +210,8 @@ The seed script automatically creates these worksheets:
 | **Session Results** | Detailed results for every scored session |
 | **Leaderboard** | Current standings with H1/H2/Total breakdown |
 | **Scoring Rules** | Points tables for reference |
+| **Draft State** | JSON blob of live draft state (auto-created by draft engine) |
+| **Draft Picks Log** | Human-readable pick log (auto-created by draft engine) |
 
 ## 🌐 API Endpoints
 
@@ -210,11 +232,13 @@ The seed script automatically creates these worksheets:
 
 ### Draft Operations
 - `GET /api/draft/status` — Current draft state and available drivers
-- `POST /api/draft/start` — Initialize draft with player order
-- `POST /api/draft/pick` — Make a driver selection
-- `POST /api/draft/undo` — Undo the last pick
-- `POST /api/draft/reset` — Reset the entire draft
+- `POST /api/draft/claim-player` — Claim a player identity and receive auth token
+- `POST /api/draft/start` — Initialize draft with player order (generates tokens)
+- `POST /api/draft/pick` — Make a driver selection (requires `token`)
+- `POST /api/draft/undo` — Undo the last pick (requires last picker's `token` or `X-Admin-Token`)
+- `POST /api/draft/reset` — Reset the entire draft (requires `X-Admin-Token`)
 - `POST /api/draft/finalize` — Save H2 picks to Google Sheets
+- `POST /api/draft/simulate-pick` — Demo only: auto-pick a random driver for current picker
 
 ## 🏗️ Architecture
 
@@ -239,11 +263,13 @@ src/
 │   └── order.py           — Snake draft order logic
 ├── sheets/                — Google Sheets integration
 │   ├── client.py          — gspread wrapper with auth
+│   ├── draft_state.py     — Durable draft state persistence (JSON blob in Sheets)
 │   ├── players.py         — Read/write draft picks
 │   ├── schedule.py        — Read/write race calendar
 │   ├── results.py         — Read/write session results
 │   ├── scores.py          — Write leaderboard
-│   └── scoring_rules.py   — Write scoring reference
+│   ├── scoring_rules.py   — Write scoring reference
+│   └── session_times.py   — Cached session times (avoids API calls on page load)
 ├── sync/                  — Data synchronization
 │   ├── scheduler.py       — Adaptive sync scheduling
 │   ├── state_manager.py   — Persistent state tracking
