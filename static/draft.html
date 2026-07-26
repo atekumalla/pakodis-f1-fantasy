@@ -120,7 +120,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
 <main class="main">
   <!-- Phase 1: Setup -->
-  <div class="section" id="setupPhase">
+  <div class="section" id="setupPhase" style="display:none">
     <div class="section-title">🏁 Set Up the H2 Draft</div>
     <p style="color:var(--muted);margin-bottom:1rem">Choose how to determine the draft order for the second half of the season.</p>
     <div class="setup-options">
@@ -148,6 +148,10 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
     <div class="section">
       <div class="section-title">Available Drivers</div>
+      <div id="identifyBanner" style="display:none;text-align:center;padding:.75rem 1rem;margin-bottom:.75rem;background:var(--surface2);border-radius:.5rem;border:1px solid var(--gold);font-size:.9rem">
+        <span style="color:var(--muted)">You're watching — </span>
+        <button class="btn btn-gold" style="padding:.3rem .8rem;font-size:.8rem" onclick="showPlayerSelectionModal()">Identify yourself to pick</button>
+      </div>
       <div id="waitBanner" style="display:none;text-align:center;padding:.6rem 1rem;margin-bottom:.75rem;background:var(--surface2);border-radius:.5rem;border:1px solid var(--border);font-weight:600;font-size:.9rem;color:var(--muted)"></div>
       <div class="driver-grid" id="driverGrid"></div>
     </div>
@@ -279,6 +283,8 @@ async function confirmPlayerSelection() {
     localStorage.setItem('draftPlayer', CURRENT_PLAYER);
     localStorage.setItem('draftToken', PLAYER_TOKEN);
     document.getElementById('confirmPlayerModal').classList.remove('show');
+    const ib = document.getElementById('identifyBanner');
+    if (ib) ib.style.display = 'none';
     showPlayerBadge(CURRENT_PLAYER);
     await loadDraftStatus();
     startPolling();
@@ -309,7 +315,9 @@ async function initializeDraft() {
   } else {
     localStorage.removeItem('draftPlayer');
     localStorage.removeItem('draftToken');
-    showPlayerSelectionModal();
+    // Show the draft board immediately; prompt non-blocking from the banner
+    const banner = document.getElementById('identifyBanner');
+    if (banner) banner.style.display = '';
   }
 }
 
@@ -361,8 +369,10 @@ async function pollDraftStatus() {
         if (savedPlayer && savedToken && PLAYERS.includes(savedPlayer)) {
           CURRENT_PLAYER = savedPlayer;
           PLAYER_TOKEN = savedToken;
+          showPlayerBadge(CURRENT_PLAYER);
         } else {
-          showPlayerSelectionModal();
+          const banner = document.getElementById('identifyBanner');
+          if (banner) banner.style.display = '';
         }
       }
     }
