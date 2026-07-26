@@ -46,10 +46,9 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
 .driver-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem}
 .driver-tile{background:var(--surface2);border:2px solid var(--border);border-left:4px solid var(--team-color,var(--border));border-radius:.75rem;padding:.85rem;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;gap:.7rem}
-.driver-tile:hover:not(.picked){border-color:var(--red);border-left-color:var(--team-color,var(--red));transform:translateY(-2px);box-shadow:0 4px 12px rgba(225,6,0,.2)}
+.driver-tile:hover:not(.picked):not(.not-your-turn){border-color:var(--red);border-left-color:var(--team-color,var(--red));transform:translateY(-2px);box-shadow:0 4px 12px rgba(225,6,0,.2)}
 .driver-tile.picked{opacity:.45;cursor:not-allowed;border-color:var(--divider);border-left-color:var(--divider)}
 .driver-tile.not-your-turn{opacity:.55;cursor:not-allowed;filter:grayscale(.4)}
-.driver-tile.not-your-turn:hover{transform:none;border-color:var(--border);box-shadow:none}
 .driver-tile.picked::after{content:attr(data-owner);position:absolute;top:4px;right:6px;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--surface);color:var(--muted);border:1px solid var(--border)}
 .driver-photo{width:46px;height:46px;border-radius:50%;object-fit:cover;background:var(--border);flex-shrink:0;border:2px solid var(--team-color,var(--border))}
 .driver-initials{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.85rem;font-family:'Barlow Condensed',sans-serif}
@@ -309,9 +308,33 @@ async function initializeDraft() {
   const savedToken = localStorage.getItem('draftToken');
 
   if (savedPlayer && savedToken && PLAYERS.includes(savedPlayer)) {
-    CURRENT_PLAYER = savedPlayer;
-    PLAYER_TOKEN = savedToken;
-    showPlayerBadge(CURRENT_PLAYER);
+    // Validate saved token is still valid (draft may have been reset)
+    try {
+      const r = await fetch('/api/draft/claim-player', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(withDemo({ player_name: savedPlayer })),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        CURRENT_PLAYER = data.player_name;
+        PLAYER_TOKEN = data.token;
+        localStorage.setItem('draftPlayer', CURRENT_PLAYER);
+        localStorage.setItem('draftToken', PLAYER_TOKEN);
+        showPlayerBadge(CURRENT_PLAYER);
+      } else {
+        // Token/player no longer valid — clear and re-prompt
+        localStorage.removeItem('draftPlayer');
+        localStorage.removeItem('draftToken');
+        const banner = document.getElementById('identifyBanner');
+        if (banner) banner.style.display = '';
+      }
+    } catch(e) {
+      // Network error — use cached token optimistically
+      CURRENT_PLAYER = savedPlayer;
+      PLAYER_TOKEN = savedToken;
+      showPlayerBadge(CURRENT_PLAYER);
+    }
   } else {
     localStorage.removeItem('draftPlayer');
     localStorage.removeItem('draftToken');
@@ -613,7 +636,15 @@ document.getElementById('btnConfirmPick').addEventListener('click', async () => 
         token: PLAYER_TOKEN,
       })),
     });
-    if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); hideConfirmModal(); return; }
+    if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`);
+      // If token is invalid, clear auth and re-prompt
+      if (err.detail && err.detail.includes('Invalid token')) {
+        CURRENT_PLAYER = ''; PLAYER_TOKEN = '';
+        localStorage.removeItem('draftPlayer'); localStorage.removeItem('draftToken');
+        const ib = document.getElementById('identifyBanner'); if (ib) ib.style.display = '';
+        const badge = document.getElementById('playerBadge'); if (badge) badge.style.display = 'none';
+      }
+      hideConfirmModal(); return; }
     draftState = await r.json();
     lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
     hideConfirmModal();
