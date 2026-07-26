@@ -816,8 +816,22 @@ async def make_draft_pick(body: dict):
 
 
 @app.post("/api/draft/undo")
-async def undo_draft_pick(body: dict | None = None):
-    draft_mgr = _get_draft_manager((body or {}).get("demo", False))
+async def undo_draft_pick(
+    body: dict | None = None,
+    x_admin_token: str | None = Header(default=None),
+):
+    body = body or {}
+    draft_mgr = _get_draft_manager(body.get("demo", False))
+    token = body.get("token", "")
+
+    # Check authorization: player can undo their own last pick, admin can undo anyone's
+    if draft_mgr.state.picks:
+        last_picker = draft_mgr.state.picks[-1].player_name
+        player_token = draft_mgr.state.player_tokens.get(last_picker, "")
+        is_own_pick = token and player_token and hmac.compare_digest(token, player_token)
+        if not is_own_pick:
+            _require_admin(x_admin_token)
+    
     try:
         draft_mgr.undo_last_pick()
         return draft_mgr.get_status()
@@ -826,7 +840,11 @@ async def undo_draft_pick(body: dict | None = None):
 
 
 @app.post("/api/draft/reset")
-async def reset_draft(body: dict | None = None):
+async def reset_draft(
+    body: dict | None = None,
+    x_admin_token: str | None = Header(default=None),
+):
+    _require_admin(x_admin_token)
     draft_mgr = _get_draft_manager((body or {}).get("demo", False))
     draft_mgr.reset_draft()
     return draft_mgr.get_status()

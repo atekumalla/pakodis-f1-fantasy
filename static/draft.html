@@ -414,7 +414,9 @@ function renderDraft() {
   document.getElementById('setupPhase').style.display = (s === 'not_started') ? '' : 'none';
   document.getElementById('draftPhase').style.display = (s === 'order_set' || s === 'in_progress') ? '' : 'none';
   document.getElementById('completedPhase').style.display = (s === 'completed') ? '' : 'none';
-  document.getElementById('btnUndo').style.display = (s === 'in_progress' || s === 'order_set') ? '' : 'none';
+  const lastPicker = draftState.picks && draftState.picks.length > 0 ? draftState.picks[draftState.picks.length - 1].player_name : null;
+  const canUndo = (s === 'in_progress' || s === 'order_set') && lastPicker && (DEMO || lastPicker === CURRENT_PLAYER);
+  document.getElementById('btnUndo').style.display = canUndo ? '' : 'none';
   document.getElementById('btnReset').style.display = (s !== 'not_started') ? '' : 'none';
   document.getElementById('btnShare').style.display = (draftState.picks && draftState.picks.length > 0) ? '' : 'none';
 
@@ -661,7 +663,7 @@ document.getElementById('btnUndo').addEventListener('click', async () => {
     const r = await fetch('/api/draft/undo', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(withDemo({})),
+      body: JSON.stringify(withDemo({ token: PLAYER_TOKEN })),
     });
     if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
     draftState = await r.json();
@@ -671,13 +673,15 @@ document.getElementById('btnUndo').addEventListener('click', async () => {
   } catch(e) { showToast('❌ Undo failed'); }
 });
 
-// Reset
+// Reset (admin-only)
 document.getElementById('btnReset').addEventListener('click', async () => {
+  const adminPw = prompt('Enter admin password to reset the draft:');
+  if (!adminPw) return;
   if (!confirm('Reset the entire draft? This cannot be undone.')) return;
   try {
     const r = await fetch('/api/draft/reset', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'X-Admin-Token': adminPw},
       body: JSON.stringify(withDemo({})),
     });
     if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
