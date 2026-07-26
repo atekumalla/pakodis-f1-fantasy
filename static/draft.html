@@ -322,6 +322,7 @@ async function initializeDraft() {
         localStorage.setItem('draftPlayer', CURRENT_PLAYER);
         localStorage.setItem('draftToken', PLAYER_TOKEN);
         showPlayerBadge(CURRENT_PLAYER);
+        renderDraft();
       } else {
         // Token/player no longer valid — clear and re-prompt
         localStorage.removeItem('draftPlayer');
@@ -334,6 +335,7 @@ async function initializeDraft() {
       CURRENT_PLAYER = savedPlayer;
       PLAYER_TOKEN = savedToken;
       showPlayerBadge(CURRENT_PLAYER);
+      renderDraft();
     }
   } else {
     localStorage.removeItem('draftPlayer');
@@ -390,9 +392,33 @@ async function pollDraftStatus() {
         const savedPlayer = localStorage.getItem('draftPlayer');
         const savedToken = localStorage.getItem('draftToken');
         if (savedPlayer && savedToken && PLAYERS.includes(savedPlayer)) {
-          CURRENT_PLAYER = savedPlayer;
-          PLAYER_TOKEN = savedToken;
-          showPlayerBadge(CURRENT_PLAYER);
+          // Validate the cached token against the new draft (tokens change on reset)
+          try {
+            const vr = await fetch('/api/draft/claim-player', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(withDemo({ player_name: savedPlayer })),
+            });
+            if (vr.ok) {
+              const vd = await vr.json();
+              CURRENT_PLAYER = vd.player_name;
+              PLAYER_TOKEN = vd.token;
+              localStorage.setItem('draftPlayer', CURRENT_PLAYER);
+              localStorage.setItem('draftToken', PLAYER_TOKEN);
+              showPlayerBadge(CURRENT_PLAYER);
+              renderDraft();
+            } else {
+              localStorage.removeItem('draftPlayer');
+              localStorage.removeItem('draftToken');
+              const banner = document.getElementById('identifyBanner');
+              if (banner) banner.style.display = '';
+            }
+          } catch(e) {
+            CURRENT_PLAYER = savedPlayer;
+            PLAYER_TOKEN = savedToken;
+            showPlayerBadge(CURRENT_PLAYER);
+            renderDraft();
+          }
         } else {
           const banner = document.getElementById('identifyBanner');
           if (banner) banner.style.display = '';
