@@ -417,7 +417,6 @@ function renderDraftBoard() {
   ).join('<span style="color:var(--faint);margin:0 .15rem">→</span>');
 
   // Driver grid
-  const cp = draftState.current_picker;
   const isMyTurn = CURRENT_PLAYER && cp && CURRENT_PLAYER === cp;
   const picked = new Set(draftState.picks.map(p => p.driver_name));
   const pickOwner = {};
