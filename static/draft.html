@@ -754,7 +754,8 @@ function shareDraftPicks() {
   const isComplete = draftState.status === 'completed';
   const title = isComplete ? '🏆 F1 H2 Draft Results' : '🏎️ F1 H2 Draft — In Progress';
   let lines = [title, ''];
-  PLAYERS.forEach(name => {
+  const playerOrder = (draftState.base_order && draftState.base_order.length > 0) ? draftState.base_order : PLAYERS;
+  playerOrder.forEach(name => {
     const picks = byPlayer[name] || [];
     if (picks.length === 0) return;
     lines.push(`*${name}*`);
