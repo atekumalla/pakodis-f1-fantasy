@@ -739,10 +739,20 @@ async def claim_player(body: dict):
     
     if draft_mgr.state.status == DraftStatus.NOT_STARTED:
         raise HTTPException(400, "Draft has not started yet")
-    
-    if player_name not in draft_mgr.state.player_tokens:
+
+    if player_name not in draft_mgr.state.player_names:
         raise HTTPException(400, f"Unknown player: {player_name}")
-    
+
+    # Migration: if draft was started before token auth was added, generate tokens now
+    if player_name not in draft_mgr.state.player_tokens:
+        import secrets
+        with draft_mgr._lock:
+            for name in draft_mgr.state.player_names:
+                if name not in draft_mgr.state.player_tokens:
+                    draft_mgr.state.player_tokens[name] = secrets.token_urlsafe(16)
+            draft_mgr._save()
+        logger.info(f"Generated missing tokens for {draft_mgr.state.player_names} (migration)")
+
     token = draft_mgr.state.player_tokens[player_name]
     logger.info(f"Player {player_name} claimed with token (prefix: {token[:8]})")
     

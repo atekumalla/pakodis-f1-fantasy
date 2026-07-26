@@ -262,6 +262,8 @@ async function confirmPlayerSelection() {
       const err = await r.json();
       showToast('❌ ' + (err.detail || 'Failed to claim player'));
       SELECTED_PLAYER = '';
+      document.getElementById('confirmPlayerModal').classList.remove('show');
+      showPlayerSelectionModal();
       return;
     }
     const data = await r.json();
