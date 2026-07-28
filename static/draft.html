@@ -287,7 +287,7 @@ async function confirmPlayerSelection() {
     if (ib) ib.style.display = 'none';
     showPlayerBadge(CURRENT_PLAYER);
     await loadDraftStatus();
-    startPolling();
+    if (draftState && draftState.status === 'in_progress') startPolling();
     showToast(`✅ Playing as ${CURRENT_PLAYER}!`);
   } catch(e) {
     showToast('❌ Failed to claim player');
@@ -298,9 +298,13 @@ async function confirmPlayerSelection() {
 async function initializeDraft() {
   // Always load status first so we know the draft state before showing any modals
   await loadDraftStatus();
-  startPolling();
 
   const status = draftState && draftState.status;
+
+  // Only poll while draft is actively in progress
+  if (status === 'in_progress') {
+    startPolling();
+  }
 
   // Don't prompt for identity until the draft has actually started
   if (status === 'not_started') return;
@@ -388,6 +392,11 @@ async function pollDraftStatus() {
       lastRevision = next.revision != null ? next.revision : lastRevision;
       draftState = next;
       renderDraft();
+      // Stop polling if draft is completed or not yet started
+      if (next.status === 'completed' || next.status === 'not_started') {
+        stopPolling();
+        return;
+      }
       // Draft just started — prompt player to identify themselves if not already done
       if (prevStatus === 'not_started' && next.status !== 'not_started' && !PLAYER_TOKEN) {
         const savedPlayer = localStorage.getItem('draftPlayer');
@@ -432,6 +441,13 @@ async function pollDraftStatus() {
 function startPolling() {
   if (pollTimer) return;
   pollTimer = setInterval(pollDraftStatus, 1000);
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
 }
 
 function renderDraft() {
@@ -601,6 +617,7 @@ document.getElementById('btnRandomize').addEventListener('click', async () => {
     if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
     draftState = await r.json();
     lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
+    startPolling();
 
     // Show the random result before the board
     const resultDiv = document.getElementById('randomResult');
@@ -642,6 +659,7 @@ document.getElementById('btnStartCustom').addEventListener('click', async () => 
     if (!r.ok) { const err = await r.json(); showToast(`❌ ${err.detail}`); return; }
     draftState = await r.json();
     lastRevision = draftState.revision != null ? draftState.revision : lastRevision;
+    startPolling();
     renderDraft();
   } catch(e) { showToast('❌ Failed to start draft'); }
 });
