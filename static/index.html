@@ -170,14 +170,18 @@ tbody tr:hover{background:var(--surface2)}
 .driver-results-table .dnf{color:var(--muted);font-style:italic}
 .footer{text-align:center;padding:2rem 1rem;color:var(--faint);font-size:.75rem}
 .footer a{color:var(--red);text-decoration:none}
+.hdr-logo{height:2rem;vertical-align:middle;margin-right:.15rem}
+.driver-team-logo{width:28px;height:28px;object-fit:contain;flex-shrink:0}
+.driver-detail-team-logo{width:120px;height:120px;object-fit:contain;border-radius:.75rem;background:var(--surface);border:3px solid var(--team-color,var(--border));padding:8px}
+.constructor-logo{width:28px;height:28px;object-fit:contain;vertical-align:middle}
 @media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}
-@media(max-width:600px){.main{padding:1rem;gap:1rem}.cards{grid-template-columns:1fr}.hdr{padding:.6rem .75rem;flex-wrap:wrap;gap:.5rem}.hdr-title{font-size:1.2rem}.hdr-sub{font-size:.68rem}.hdr-actions{width:100%;justify-content:center;gap:.4rem}.btn{padding:.35rem .55rem;font-size:.72rem}.leader-banner{padding:1rem 1.25rem}.driver-row{padding:.4rem}.driver-photo{width:32px;height:32px}.chart-container{height:240px}.sessions-row{grid-template-columns:1fr;gap:.75rem}.race-header{gap:.6rem}.race-flag{font-size:2rem}.race-title{font-size:1.35rem}.race-total-value{font-size:1.4rem}#pointsTable th,#pointsTable td{padding:.45rem .35rem}.modal{padding:.5rem;align-items:flex-start}.modal-content{padding:1.1rem;max-height:95vh;border-radius:.75rem}.modal-header{margin-bottom:1rem;padding-bottom:.75rem}.modal-title{font-size:1.3rem}.driver-detail-header{gap:.85rem;padding:.85rem;margin-bottom:1rem}.driver-detail-photo{width:66px;height:66px;border-width:2px}.driver-detail-name{font-size:1.25rem;gap:.5rem}.driver-detail-number{width:32px;height:32px;font-size:1rem}.driver-detail-meta{flex-direction:column;gap:.3rem;margin-top:.5rem;font-size:.85rem}.driver-results-table th,.driver-results-table td{padding:.4rem .35rem;font-size:.78rem}.hide-mobile{display:none}.standings-table th,.standings-table td{padding:.5rem .4rem;font-size:.8rem}}
+@media(max-width:600px){.main{padding:1rem;gap:1rem}.cards{grid-template-columns:1fr}.hdr{padding:.6rem .75rem;flex-wrap:wrap;gap:.5rem}.hdr-title{font-size:1.2rem}.hdr-sub{font-size:.68rem}.hdr-actions{width:100%;justify-content:center;gap:.4rem}.btn{padding:.35rem .55rem;font-size:.72rem}.leader-banner{padding:1rem 1.25rem}.driver-row{padding:.4rem}.driver-photo{width:32px;height:32px}.chart-container{height:240px}.sessions-row{grid-template-columns:1fr;gap:.75rem}.race-header{gap:.6rem}.race-flag{font-size:2rem}.race-title{font-size:1.35rem}.race-total-value{font-size:1.4rem}#pointsTable th,#pointsTable td{padding:.45rem .35rem}.modal{padding:.5rem;align-items:flex-start}.modal-content{padding:1.1rem;max-height:95vh;border-radius:.75rem}.modal-header{margin-bottom:1rem;padding-bottom:.75rem}.modal-title{font-size:1.3rem}.driver-detail-header{gap:.85rem;padding:.85rem;margin-bottom:1rem}.driver-detail-photo{width:66px;height:66px;border-width:2px}.driver-detail-team-logo{width:66px;height:66px;padding:4px}.driver-detail-name{font-size:1.25rem;gap:.5rem}.driver-detail-number{width:32px;height:32px;font-size:1rem}.driver-detail-meta{flex-direction:column;gap:.3rem;margin-top:.5rem;font-size:.85rem}.driver-results-table th,.driver-results-table td{padding:.4rem .35rem;font-size:.78rem}.hide-mobile{display:none}.standings-table th,.standings-table td{padding:.5rem .4rem;font-size:.8rem}}
 </style>
 </head>
 <body>
 <header class="hdr">
   <div class="hdr-brand">
-    <div><div class="hdr-title"><span>F1</span> 2026 Fantasy Draft</div><div class="hdr-sub" id="headerSub">Loading...</div></div>
+    <div><div class="hdr-title"><img class="hdr-logo" src="/assets/F1-Logo-PNG-Photo.png" alt="F1"> 2026 Fantasy Draft</div><div class="hdr-sub" id="headerSub">Loading...</div></div>
   </div>
   <div class="hdr-actions">
     <a class="btn btn-sec" href="/draft">🏁 Mid-Season Draft</a>
@@ -479,6 +483,29 @@ tbody tr:hover{background:var(--surface2)}
 
 <script>
 const PLAYER_COLORS = {'Anup':'#e10600','Rohit':'#3b82f6','Abhinav':'#22c55e','Prateik':'#f59e0b'};
+
+function getTeamLogoUrl(teamName) {
+  if (!teamName) return '';
+  const mapping = {
+    'alpine': 'Alpine.png',
+    'aston martin': 'Aston Martin.png',
+    'audi': 'Audi.png',
+    'cadillac': 'Cadillac.png',
+    'ferrari': 'Ferrari.png',
+    'haas': 'Haas.png',
+    'mclaren': 'Mclaren.png',
+    'mercedes': 'Mercedes.png',
+    'racing bulls': 'Racing Bulls.png',
+    'red bull racing': 'Red Bull Racing.png',
+    'red bull': 'Red Bull Racing.png',
+    'rb': 'Racing Bulls.png',
+    'williams': 'Williams.png',
+  };
+  const key = teamName.toLowerCase().trim();
+  const file = mapping[key];
+  if (!file) return '';
+  return '/assets/Teams/' + encodeURIComponent(file);
+}
 let DATA = null;
 let CALENDAR = null;
 let currentHalf = 'total';
@@ -600,6 +627,8 @@ function renderCards(lb) {
       const photoHtml = headshotUrl 
         ? `<img class="driver-photo" src="${headshotUrl}" alt="${d.name}" onerror="this.outerHTML='<div class=\\'driver-photo driver-initials\\' style=\\'background:#${teamColor}\\'>${initials}</div>'">`
         : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
+      const teamLogoUrl = getTeamLogoUrl(d.team);
+      const teamLogoHtml = teamLogoUrl ? `<img class="driver-team-logo" src="${teamLogoUrl}" alt="${d.team}" onerror="this.style.display='none'">` : '';
       return `<div class="driver-row" style="--team-color:#${teamColor}" onclick="openDriverDetailModal(${d.number})" title="Click for details">
         ${photoHtml}
         <div class="driver-details">
@@ -612,6 +641,7 @@ function renderCards(lb) {
             <span class="driver-team">${d.team || ''}</span>
           </div>
         </div>
+        ${teamLogoHtml}
         <div class="driver-points">+${d.points}</div>
       </div>`;
     }).join('');
@@ -631,6 +661,8 @@ function renderCards(lb) {
         const photoHtml = headshotUrl 
           ? `<img class="driver-photo" src="${headshotUrl}" alt="${d.name}" onerror="this.outerHTML='<div class=\\'driver-photo driver-initials\\' style=\\'background:#${teamColor}\\'>${initials}</div>'">`
           : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
+        const teamLogoUrl2 = getTeamLogoUrl(d.team);
+        const teamLogoHtml2 = teamLogoUrl2 ? `<img class="driver-team-logo" src="${teamLogoUrl2}" alt="${d.team}" onerror="this.style.display='none'">` : '';
         return `<div class="driver-row" style="--team-color:#${teamColor};opacity:0.7" onclick="openDriverDetailModal(${d.number})" title="Click for details">
           ${photoHtml}
           <div class="driver-details">
@@ -643,6 +675,7 @@ function renderCards(lb) {
               <span class="driver-team">${d.team || ''}</span>
             </div>
           </div>
+          ${teamLogoHtml2}
           <div class="driver-points" style="color:var(--blue)">+${d.points}</div>
         </div>`;
       }).join('');
@@ -1219,6 +1252,8 @@ document.getElementById('btnDriverStandings').addEventListener('click', async ()
     
     standings.drivers.forEach(driver => {
       const row = document.createElement('tr');
+      const dLogoUrl = getTeamLogoUrl(driver.team);
+      const dLogoHtml = dLogoUrl ? `<img class="constructor-logo" src="${dLogoUrl}" alt="${driver.team}" onerror="this.style.display='none'">` : `<div class="team-badge" style="background:#${driver.team_color}"></div>`;
       row.innerHTML = `
         <td class="pos">${driver.position}</td>
         <td>
@@ -1229,7 +1264,7 @@ document.getElementById('btnDriverStandings').addEventListener('click', async ()
         </td>
         <td>
           <div class="team-cell">
-            <div class="team-badge" style="background:#${driver.team_color}"></div>
+            ${dLogoHtml}
             <span>${driver.team}</span>
           </div>
         </td>
@@ -1270,11 +1305,13 @@ document.getElementById('btnConstructorStandings').addEventListener('click', asy
     
     standings.constructors.forEach(team => {
       const row = document.createElement('tr');
+      const cLogoUrl = getTeamLogoUrl(team.team);
+      const cLogoHtml = cLogoUrl ? `<img class="constructor-logo" src="${cLogoUrl}" alt="${team.team}" onerror="this.style.display='none'">` : `<div class="team-badge" style="background:#${team.team_color}"></div>`;
       row.innerHTML = `
         <td class="pos">${team.position}</td>
         <td>
           <div class="team-cell">
-            <div class="team-badge" style="background:#${team.team_color}"></div>
+            ${cLogoHtml}
             <span style="font-weight:700">${team.team}</span>
           </div>
         </td>
@@ -1329,9 +1366,12 @@ function openDriverDetailModal(driverNumber) {
     ? `<img class="driver-detail-photo" src="${headshotUrl}" alt="${driverInfo.name}" style="border-color:#${teamColor}" onerror="this.outerHTML='<div class=\\'driver-detail-photo\\' style=\\'background:#${teamColor};border-color:#${teamColor};display:flex;align-items:center;justify-content:center;color:#fff;font-size:2.5rem;font-weight:800\\'>${initials}</div>'">`
     : `<div class="driver-detail-photo" style="background:#${teamColor};border-color:#${teamColor};display:flex;align-items:center;justify-content:center;color:#fff;font-size:2.5rem;font-weight:800">${initials}</div>`;
   
+  const detailTeamLogoUrl = getTeamLogoUrl(driverInfo.team);
+  const detailTeamLogoHtml = detailTeamLogoUrl ? `<img class="driver-detail-team-logo" src="${detailTeamLogoUrl}" alt="${driverInfo.team}" style="border-color:#${teamColor}" onerror="this.style.display='none'">` : '';
+  
   document.getElementById('driverDetailHeader').innerHTML = `
     ${photoHtml}
-    <div class="driver-detail-info">
+    <div class="driver-detail-info" style="flex:1">
       <div class="driver-detail-name">
         <span>${flag} ${firstName} <strong>${lastName}</strong></span>
         <div class="driver-detail-number" style="background:#${teamColor}">#${driverNum}</div>
@@ -1347,6 +1387,7 @@ function openDriverDetailModal(driverNumber) {
         </div>
       </div>
     </div>
+    ${detailTeamLogoHtml}
   `;
   
   // Get race results for this driver

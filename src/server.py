@@ -192,6 +192,10 @@ _static_dir = Path(__file__).resolve().parent.parent / "static"
 if _static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 
+_assets_dir = Path(__file__).resolve().parent.parent / "assets"
+if _assets_dir.exists():
+    app.mount("/assets", StaticFiles(directory=str(_assets_dir)), name="assets")
+
 
 # ─── HEALTH CHECK (Render probes with HEAD /) ────────────────────────────────
 

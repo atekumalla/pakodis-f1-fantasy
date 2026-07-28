@@ -100,11 +100,12 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
 @media(max-width:900px){.picks-panel{grid-template-columns:repeat(2,1fr)}.driver-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}}
 @media(max-width:600px){.hdr{padding:.6rem .75rem;flex-wrap:wrap;gap:.5rem}.hdr-title{font-size:1.2rem}.hdr-actions{width:100%;justify-content:flex-end;gap:.4rem}.btn{padding:.4rem .7rem;font-size:.75rem}.main{padding:1rem;gap:1rem}.section{padding:1rem}.section-title{font-size:1.15rem}.picks-panel{grid-template-columns:1fr 1fr}.driver-grid{grid-template-columns:1fr 1fr;gap:.4rem}.driver-tile{padding:.5rem}.driver-photo{width:38px;height:38px}.driver-name{font-size:.95rem}.current-picker{font-size:1.6rem}.completed-banner{padding:1.5rem 1rem}.completed-title{font-size:1.6rem}.modal{padding:1.25rem;width:94%}.modal-driver{font-size:1.5rem}.modal-actions{flex-wrap:wrap}}
+.hdr-logo{height:2rem;vertical-align:middle;margin-right:.15rem}
 </style>
 </head>
 <body>
 <header class="hdr">
-  <div class="hdr-title"><span>F1</span> Mid-Season Draft</div>
+  <div class="hdr-title"><img class="hdr-logo" src="/assets/F1-Logo-PNG-Photo.png" alt="F1"> Mid-Season Draft</div>
   <div class="hdr-actions">
     <div id="playerBadge" style="display:none;align-items:center;gap:.4rem;padding:.35rem .75rem;background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.85rem;letter-spacing:.03em">
       <span style="font-size:.7rem;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.06em">You</span>
