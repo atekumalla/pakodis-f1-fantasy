@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root,[data-theme="light"]{--bg:#f0f2f5;--surface:#fff;--surface2:#f7f8fa;--border:#ced1d9;--divider:#d8dbe1;--text:#111827;--muted:#6b7280;--faint:#9ca3af;--red:#e10600;--red-hover:#b30500;--red-light:#fce4e4;--gold:#d97706;--gold-light:#fef3c7;--blue:#2563eb;--blue-light:#dbeafe;--shadow-sm:0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08);--shadow-lg:0 12px 32px rgba(0,0,0,.12)}
-[data-theme="dark"]{--bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--divider:#21262d;--text:#e6edf3;--muted:#8b949e;--faint:#4d5566;--red:#e10600;--red-hover:#ff1e00;--red-light:#3a0a0a;--gold:#f59e0b;--gold-light:#451a03;--blue:#3b82f6;--blue-light:#1e3a5f;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-md:0 4px 12px rgba(0,0,0,.4);--shadow-lg:0 12px 32px rgba(0,0,0,.5)}
+[data-theme="dark"]{--bg:#0a0e14;--surface:#141921;--surface2:#1a2029;--surface-glass:rgba(20,25,33,0.75);--border:#252d3a;--divider:#1e2633;--text:#e6edf3;--muted:#8b949e;--faint:#4d5566;--red:#e10600;--red-hover:#ff1e00;--red-light:#3a0a0a;--red-glow:rgba(225,6,0,0.3);--gold:#f59e0b;--gold-light:#451a03;--blue:#3b82f6;--blue-light:#1e3a5f;--green:#10b981;--purple:#8b5cf6;--shadow-sm:0 1px 3px rgba(0,0,0,.3);--shadow-md:0 4px 16px rgba(0,0,0,.4);--shadow-lg:0 12px 40px rgba(0,0,0,.5);--shadow-glow:0 0 30px var(--red-glow)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{min-height:100dvh;font-family:'Barlow',system-ui,sans-serif;color:var(--text);background:var(--bg);line-height:1.5}
 button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
@@ -176,6 +176,110 @@ tbody tr:hover{background:var(--surface2)}
 .constructor-logo{width:28px;height:28px;object-fit:contain;vertical-align:middle;background:#fff;border-radius:4px;padding:2px}
 @media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}
 @media(max-width:600px){.main{padding:1rem;gap:1rem}.cards{grid-template-columns:1fr}.hdr{padding:.6rem .75rem;flex-wrap:wrap;gap:.5rem}.hdr-title{font-size:1.2rem}.hdr-sub{font-size:.68rem}.hdr-actions{width:100%;justify-content:center;gap:.4rem}.btn{padding:.35rem .55rem;font-size:.72rem}.leader-banner{padding:1rem 1.25rem}.driver-row{padding:.4rem}.driver-photo{width:32px;height:32px}.chart-container{height:240px}.sessions-row{grid-template-columns:1fr;gap:.75rem}.race-header{gap:.6rem}.race-flag{font-size:2rem}.race-title{font-size:1.35rem}.race-total-value{font-size:1.4rem}#pointsTable th,#pointsTable td{padding:.45rem .35rem}.modal{padding:.5rem;align-items:flex-start}.modal-content{padding:1.1rem;max-height:95vh;border-radius:.75rem}.modal-header{margin-bottom:1rem;padding-bottom:.75rem}.modal-title{font-size:1.3rem}.driver-detail-header{gap:.85rem;padding:.85rem;margin-bottom:1rem}.driver-detail-photo{width:66px;height:66px;border-width:2px}.driver-detail-team-logo{width:66px;height:66px;padding:6px}.driver-detail-name{font-size:1.25rem;gap:.5rem}.driver-detail-number{width:32px;height:32px;font-size:1rem}.driver-detail-meta{flex-direction:column;gap:.3rem;margin-top:.5rem;font-size:.85rem}.driver-results-table th,.driver-results-table td{padding:.4rem .35rem;font-size:.78rem}.hide-mobile{display:none}.standings-table th,.standings-table td{padding:.5rem .4rem;font-size:.8rem}}
+
+/* ===== ENHANCED UI: Animated background grid ===== */
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(225,6,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(225,6,0,0.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0}
+
+/* ===== ENHANCED UI: Glassmorphism header ===== */
+.hdr{background:var(--surface-glass,var(--surface));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:var(--shadow-md),0 2px 20px var(--red-glow,rgba(225,6,0,.2))}
+.main{position:relative;z-index:1}
+
+/* ===== ENHANCED UI: Button hover glow ===== */
+.btn{transition:all .25s cubic-bezier(.4,0,.2,1)}
+.btn-sec:hover:not(:disabled){border-color:var(--red);box-shadow:0 0 15px rgba(225,6,0,.15);transform:translateY(-1px)}
+.btn-red:hover:not(:disabled){box-shadow:0 0 20px var(--red-glow,rgba(225,6,0,.3));transform:translateY(-1px)}
+
+/* ===== ENHANCED UI: Animated leader banner ===== */
+.leader-banner{animation:bannerGlow 4s ease-in-out infinite alternate;box-shadow:0 0 30px rgba(225,6,0,.3),var(--shadow-lg)}
+@keyframes bannerGlow{0%{box-shadow:0 0 30px rgba(225,6,0,.3),0 12px 40px rgba(0,0,0,.5)}100%{box-shadow:0 0 60px rgba(225,6,0,.5),0 12px 40px rgba(0,0,0,.5)}}
+.leader-banner::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:shimmer 3s ease-in-out infinite}
+@keyframes shimmer{0%{left:-100%}100%{left:200%}}
+.leader-trophy{font-size:4rem;filter:drop-shadow(0 0 20px rgba(255,215,0,.4));animation:trophyBounce 2s ease-in-out infinite}
+@keyframes trophyBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* ===== ENHANCED UI: Player card hover effects ===== */
+.player-tile{transition:all .3s cubic-bezier(.4,0,.2,1)}
+.player-tile:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--player-color,var(--border))}
+
+/* ===== ENHANCED UI: Driver row hover ===== */
+.driver-row{transition:all .2s cubic-bezier(.4,0,.2,1)}
+.driver-row:hover{transform:translateX(4px)}
+
+/* ===== ENHANCED UI: Half-tab active glow ===== */
+.half-tab.active{box-shadow:0 2px 10px var(--red-glow,rgba(225,6,0,.3))}
+.half-tab{transition:all .25s cubic-bezier(.4,0,.2,1)}
+.half-tab:hover:not(.active){background:var(--surface2);color:var(--red)}
+
+/* ===== ENHANCED UI: Stats summary bar ===== */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem;text-align:center;position:relative;overflow:hidden;transition:all .25s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--stat-color,var(--red))}
+.stat-icon{font-size:1.5rem;margin-bottom:.25rem}
+.stat-value{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:var(--stat-color,var(--red));line-height:1}
+.stat-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-top:.25rem}
+
+/* ===== ENHANCED UI: Points table position badges ===== */
+.pos-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.85rem}
+.pos-1{background:linear-gradient(135deg,#FFD700,#FFA500);color:#000}
+.pos-2{background:linear-gradient(135deg,#C0C0C0,#A0A0A0);color:#000}
+.pos-3{background:linear-gradient(135deg,#CD7F32,#8B4513);color:#fff}
+.pos-4,.pos-other{background:var(--surface2);color:var(--muted)}
+.total-pts{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;color:var(--red)}
+.gap-indicator{font-size:.8rem;color:var(--muted);font-weight:600}
+.gap-leader{color:var(--green,#10b981);font-weight:700}
+.player-trend{display:inline-flex;align-items:center;gap:2px;font-size:.75rem;margin-left:.35rem}
+.trend-up{color:var(--green,#10b981)}
+.trend-down{color:var(--red)}
+.trend-same{color:var(--muted)}
+
+/* ===== ENHANCED UI: Head-to-head widget ===== */
+.h2h-widget{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;box-shadow:var(--shadow-sm)}
+.h2h-title{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.h2h-bar-container{margin-bottom:.75rem}
+.h2h-labels{display:flex;justify-content:space-between;font-size:.85rem;font-weight:700;margin-bottom:.35rem}
+.h2h-bar{height:10px;border-radius:5px;overflow:hidden;display:flex;background:var(--surface2)}
+.h2h-bar-fill{height:100%;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.h2h-metric{font-size:.7rem;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.05em;margin-top:.15rem}
+
+/* ===== ENHANCED UI: Countdown timer ===== */
+.countdown{display:flex;gap:.5rem;align-items:center}
+.countdown-unit{display:flex;flex-direction:column;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;min-width:52px}
+.countdown-value{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;color:var(--gold);line-height:1}
+.countdown-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+
+/* ===== ENHANCED UI: Mini sparkline ===== */
+.mini-chart-wrap{height:45px;margin:.75rem 0;opacity:.6;transition:opacity .3s;position:relative}
+.player-tile:hover .mini-chart-wrap{opacity:1}
+.mini-chart-wrap canvas{width:100%!important;height:45px!important}
+
+/* ===== ENHANCED UI: Section title icon ===== */
+.section-icon{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--red);color:#fff;border-radius:6px;font-size:.85rem;margin-right:.5rem}
+
+/* ===== ENHANCED UI: Race weekend hover ===== */
+.race-weekend{transition:all .25s}
+.race-weekend:hover{box-shadow:var(--shadow-md);border-color:var(--red)}
+
+/* ===== ENHANCED UI: Upcoming race hover + highlighted race session ===== */
+.upcoming-race-card{transition:all .25s}
+.upcoming-race-card:hover{box-shadow:var(--shadow-md);border-color:var(--gold)}
+.upcoming-session-item{transition:all .2s}
+.upcoming-session-item:hover{background:var(--divider);border-color:var(--gold)}
+.upcoming-session-race{border:1px solid var(--red)!important;background:var(--red-light)!important}
+.upcoming-session-race .upcoming-session-name{color:var(--red)}
+
+/* ===== ENHANCED UI: Session tile hover ===== */
+.session-tile{transition:all .2s}
+.session-tile:hover{background:var(--divider);transform:translateY(-2px)}
+
+/* ===== ENHANCED UI: Player points under race ===== */
+.race-player-dots{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--divider)}
+.player-dot-chip{font-size:.8rem;font-weight:700;display:flex;align-items:center;gap:.35rem}
+.player-dot-chip .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ===== ENHANCED UI: Responsive adjustments for new elements ===== */
+@media(max-width:900px){.stats-bar{grid-template-columns:repeat(2,1fr)}.h2h-widget{padding:1rem}}
+@media(max-width:600px){.stats-bar{grid-template-columns:1fr 1fr}.stat-card{padding:.85rem}.stat-value{font-size:1.5rem}.countdown-unit{min-width:42px;padding:.4rem .5rem}.countdown-value{font-size:1.2rem}.h2h-labels{font-size:.75rem}.leader-trophy{font-size:3rem}}
 </style>
 </head>
 <body>
@@ -196,9 +300,11 @@ tbody tr:hover{background:var(--surface2)}
   </div>
 </header>
 <main class="main">
+  <!-- Stats Summary Bar -->
+  <div class="stats-bar" id="statsBar"></div>
   <div class="leader-banner">
     <div><div class="leader-label">🏆 Current Leader</div><div class="leader-name" id="leaderName" style="font-size:clamp(2.4rem,7vw,3rem) !important">Loading...</div><div class="leader-pts" id="leaderPts"></div></div>
-    <div style="font-size:2.5rem">🏆</div>
+    <div class="leader-trophy">🏆</div>
   </div>
   <div style="display:flex;justify-content:center">
     <div class="half-tabs">
@@ -220,6 +326,11 @@ tbody tr:hover{background:var(--surface2)}
       <div class="section-title">📈 Score Worm</div>
       <div class="chart-container"><canvas id="wormChart"></canvas></div>
     </div>
+  </div>
+  <!-- Head-to-Head Widget -->
+  <div class="h2h-widget" id="h2hWidget" style="display:none">
+    <div class="h2h-title"><span class="section-icon" style="background:var(--purple,#8b5cf6)">⚔️</span> Head-to-Head: Title Fight</div>
+    <div id="h2hContent"></div>
   </div>
   <div class="section">
     <div class="section-title">🏁 Recent Races</div>
@@ -576,6 +687,9 @@ function render() {
   document.getElementById('leaderName').textContent = leader.name;
   document.getElementById('leaderPts').innerHTML = `<strong>${leader.total} pts</strong> (H1: ${leader.h1}, H2: ${leader.h2})`;
 
+  // Stats Bar
+  renderStatsBar(lb);
+
   // KPI Cards
   renderCards(lb);
 
@@ -586,6 +700,9 @@ function render() {
   // Score Worm
   renderWorm();
 
+  // Head-to-Head
+  renderH2H(lb);
+
   // Recent Sessions
   renderRecent();
 
@@ -593,6 +710,149 @@ function render() {
   if (CALENDAR) {
     renderUpcoming();
   }
+}
+
+function renderStatsBar(lb) {
+  const el = document.getElementById('statsBar');
+  const sessions = DATA.recent_sessions || [];
+  
+  // Count race weekends
+  const raceWeekends = new Set();
+  sessions.forEach(s => raceWeekends.add(s.round));
+  const racesComplete = raceWeekends.size;
+  
+  // Total points
+  const totalPoints = lb.reduce((sum, p) => sum + p.total, 0);
+  
+  // Gap between 1st and 2nd
+  const gap = lb.length >= 2 ? (lb[0].total - lb[1].total).toFixed(1) : '0';
+  
+  // Find player with most race weekend wins
+  const raceGroups = new Map();
+  sessions.forEach(s => {
+    const key = `${s.round}-${s.grand_prix}`;
+    if (!raceGroups.has(key)) raceGroups.set(key, {});
+    const group = raceGroups.get(key);
+    Object.entries(s.player_points || {}).forEach(([name, pts]) => {
+      group[name] = (group[name] || 0) + pts;
+    });
+  });
+  
+  const winCounts = {};
+  raceGroups.forEach(group => {
+    const sorted = Object.entries(group).sort((a, b) => b[1] - a[1]);
+    if (sorted.length) winCounts[sorted[0][0]] = (winCounts[sorted[0][0]] || 0) + 1;
+  });
+  
+  let hotPlayer = '—';
+  let hotWins = 0;
+  Object.entries(winCounts).forEach(([name, wins]) => {
+    if (wins > hotWins) { hotWins = wins; hotPlayer = name; }
+  });
+  
+  el.innerHTML = `
+    <div class="stat-card" style="--stat-color:var(--gold)">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-value">${racesComplete}</div>
+      <div class="stat-label">Races Complete</div>
+    </div>
+    <div class="stat-card" style="--stat-color:var(--red)">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-value">${totalPoints.toLocaleString()}</div>
+      <div class="stat-label">Total Points Scored</div>
+    </div>
+    <div class="stat-card" style="--stat-color:var(--green,#10b981)">
+      <div class="stat-icon">📈</div>
+      <div class="stat-value">${gap}</div>
+      <div class="stat-label">Gap to Leader</div>
+    </div>
+    <div class="stat-card" style="--stat-color:var(--blue)">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-value">${hotPlayer}</div>
+      <div class="stat-label">Most Race Wins (${hotWins})</div>
+    </div>
+  `;
+}
+
+function renderH2H(lb) {
+  const widget = document.getElementById('h2hWidget');
+  const content = document.getElementById('h2hContent');
+  if (lb.length < 2) { widget.style.display = 'none'; return; }
+  
+  const p1 = lb[0], p2 = lb[1];
+  const total = p1.total + p2.total;
+  const p1Pct = total > 0 ? ((p1.total / total) * 100).toFixed(1) : 50;
+  const p2Pct = total > 0 ? (100 - p1Pct).toFixed(1) : 50;
+  
+  // Count race weekend wins for both
+  const sessions = DATA.recent_sessions || [];
+  const raceGroups = new Map();
+  sessions.forEach(s => {
+    const key = `${s.round}-${s.grand_prix}`;
+    if (!raceGroups.has(key)) raceGroups.set(key, {});
+    const group = raceGroups.get(key);
+    Object.entries(s.player_points || {}).forEach(([name, pts]) => {
+      group[name] = (group[name] || 0) + pts;
+    });
+  });
+  
+  let p1Wins = 0, p2Wins = 0;
+  let p1Best = 0, p2Best = 0;
+  raceGroups.forEach(group => {
+    const sorted = Object.entries(group).sort((a, b) => b[1] - a[1]);
+    if (sorted.length && sorted[0][0] === p1.name) p1Wins++;
+    if (sorted.length && sorted[0][0] === p2.name) p2Wins++;
+    p1Best = Math.max(p1Best, group[p1.name] || 0);
+    p2Best = Math.max(p2Best, group[p2.name] || 0);
+  });
+  
+  const totalWins = p1Wins + p2Wins || 1;
+  const p1WinPct = ((p1Wins / totalWins) * 100).toFixed(1);
+  const p2WinPct = (100 - p1WinPct).toFixed(1);
+  
+  const totalBest = p1Best + p2Best || 1;
+  const p1BestPct = ((p1Best / totalBest) * 100).toFixed(1);
+  const p2BestPct = (100 - p1BestPct).toFixed(1);
+  
+  const c1 = PLAYER_COLORS[p1.name] || 'var(--red)';
+  const c2 = PLAYER_COLORS[p2.name] || 'var(--blue)';
+  
+  widget.style.display = '';
+  content.innerHTML = `
+    <div class="h2h-bar-container">
+      <div class="h2h-labels">
+        <span style="color:${c1}">${p1.name} · ${p1.total}</span>
+        <span style="color:${c2}">${p2.name} · ${p2.total}</span>
+      </div>
+      <div class="h2h-bar">
+        <div class="h2h-bar-fill" style="width:${p1Pct}%;background:${c1};border-radius:5px 0 0 5px"></div>
+        <div class="h2h-bar-fill" style="width:${p2Pct}%;background:${c2};border-radius:0 5px 5px 0"></div>
+      </div>
+      <div class="h2h-metric">Points Share</div>
+    </div>
+    <div class="h2h-bar-container">
+      <div class="h2h-labels">
+        <span style="color:${c1}">${p1Wins} Wins</span>
+        <span style="color:${c2}">${p2Wins} Wins</span>
+      </div>
+      <div class="h2h-bar">
+        <div class="h2h-bar-fill" style="width:${p1WinPct}%;background:${c1};border-radius:5px 0 0 5px"></div>
+        <div class="h2h-bar-fill" style="width:${p2WinPct}%;background:${c2};border-radius:0 5px 5px 0"></div>
+      </div>
+      <div class="h2h-metric">Race Weekend Wins</div>
+    </div>
+    <div class="h2h-bar-container">
+      <div class="h2h-labels">
+        <span style="color:${c1}">Best: ${p1Best.toFixed(1)} pts</span>
+        <span style="color:${c2}">Best: ${p2Best.toFixed(1)} pts</span>
+      </div>
+      <div class="h2h-bar">
+        <div class="h2h-bar-fill" style="width:${p1BestPct}%;background:${c1};border-radius:5px 0 0 5px"></div>
+        <div class="h2h-bar-fill" style="width:${p2BestPct}%;background:${c2};border-radius:0 5px 5px 0"></div>
+      </div>
+      <div class="h2h-metric">Best Single Race Weekend</div>
+    </div>
+  `;
 }
 
 function renderCards(lb) {
@@ -695,19 +955,21 @@ function renderCards(lb) {
         </div>
         <span class="player-rank ${rankClass}">#${i+1}</span>
       </div>
+      <div class="mini-chart-wrap"><canvas id="sparkline-${p.name.replace(/\s/g,'-')}" height="45"></canvas></div>
       <div class="half-label">${halfLabel} Picks</div>
       <div class="driver-grid">${driverRows || '<span style="color:var(--faint);font-size:.875rem">No drivers yet</span>'}</div>
       ${otherHalfHtml}
     </div>`;
   }).join('');
+
+  // Render sparklines after DOM update
+  setTimeout(() => renderSparklines(lb), 50);
 }
 
 function renderTable(lb) {
   const thead = document.getElementById('pointsTableHead');
   const tbody = document.querySelector('#pointsTable tbody');
 
-  // Mobile-friendly: only rank, player and point totals.
-  // Per-driver scores are intentionally omitted here — they're shown in the leaderboard cards above.
   thead.innerHTML = '<tr><th>#</th><th>Player</th><th>H1</th><th>H2</th><th>Total</th><th>Gap</th></tr>';
 
   // Sort by the active tab's score (Combined = total)
@@ -716,16 +978,17 @@ function renderTable(lb) {
   const topScore = sorted.length ? sorted[0][sortKey] : 0;
 
   tbody.innerHTML = sorted.map((p, i) => {
-    const gap = i === 0 ? '—' : `−${(topScore - p[sortKey]).toFixed(1)}`;
+    const gap = i === 0 ? '<span class="gap-leader">Leader</span>' : `<span class="gap-indicator">−${(topScore - p[sortKey]).toFixed(1)}</span>`;
+    const posClass = i === 0 ? 'pos-1' : (i === 1 ? 'pos-2' : (i === 2 ? 'pos-3' : 'pos-other'));
     // Highlight the column the table is currently sorted by
     const cell = (k, extra = '') => `<td style="${extra}${sortKey === k ? ';font-weight:800' : ''}">${p[k]}</td>`;
     return `<tr>
-      <td style="font-weight:800">${i + 1}</td>
+      <td><span class="pos-badge ${posClass}">${i + 1}</span></td>
       <td style="text-align:left;font-weight:700;color:${PLAYER_COLORS[p.name] || 'var(--text)'}">${p.name}</td>
       ${cell('h1')}
       ${cell('h2')}
-      ${cell('total', 'font-weight:800;font-size:1rem')}
-      <td style="color:var(--muted)">${gap}</td>
+      <td class="total-pts">${p[sortKey === 'total' ? 'total' : sortKey]}</td>
+      <td>${gap}</td>
     </tr>`;
   }).join('');
 }
@@ -743,9 +1006,10 @@ function renderWorm() {
     borderColor: PLAYER_COLORS[name] || '#888',
     backgroundColor: 'transparent',
     tension: 0.3,
-    borderWidth: 2.5,
-    pointRadius: 0,
-    pointHoverRadius: 4,
+    borderWidth: 3,
+    pointRadius: 3,
+    pointHoverRadius: 6,
+    pointBackgroundColor: PLAYER_COLORS[name] || '#888',
   }));
 
   // Halfway annotation
@@ -784,14 +1048,29 @@ function renderWorm() {
     data: { labels: xLabels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       scales: {
-        x: { display: true, ticks: { maxTicksLimit: 10, maxRotation: 45, minRotation: 45, font: { size: 9 }, color: isDark ? '#8b949e' : '#6b7280' }, grid: { display: true, color: isDark ? '#21262d' : '#e5e7eb', lineWidth: 1 } },
-        y: { display: true, ticks: { font: { size: 10 }, color: isDark ? '#8b949e' : '#6b7280' }, grid: { display: true, color: isDark ? '#21262d' : '#e5e7eb', lineWidth: 1 } }
+        x: { display: true, ticks: { maxTicksLimit: 10, maxRotation: 45, minRotation: 45, font: { size: 9 }, color: isDark ? '#8b949e' : '#6b7280' }, grid: { display: true, color: isDark ? 'rgba(225,6,0,.06)' : '#e5e7eb', lineWidth: 1 } },
+        y: { display: true, ticks: { font: { size: 10 }, color: isDark ? '#8b949e' : '#6b7280' }, grid: { display: true, color: isDark ? 'rgba(225,6,0,.06)' : '#e5e7eb', lineWidth: 1 } }
       },
       plugins: {
-        legend: { position: 'bottom', labels: { font: { family: 'Barlow Condensed', weight: 700, size: 12 }, color: isDark ? '#e6edf3' : '#111827', padding: 16, usePointStyle: true, pointStyle: 'line', pointStyleWidth: 30 } },
-        tooltip: { mode: 'index', intersect: false }
-      }
+        legend: { position: 'bottom', labels: { font: { family: 'Barlow Condensed', weight: 700, size: 12 }, color: isDark ? '#e6edf3' : '#111827', padding: 20, usePointStyle: true, pointStyle: 'circle' } },
+        tooltip: {
+          mode: 'index', intersect: false,
+          backgroundColor: isDark ? '#141921' : '#fff',
+          titleColor: isDark ? '#e6edf3' : '#111',
+          bodyColor: isDark ? '#e6edf3' : '#111',
+          borderColor: isDark ? '#252d3a' : '#ccc',
+          borderWidth: 1,
+          cornerRadius: 8,
+          padding: 12,
+          titleFont: { family: 'Barlow Condensed', weight: 700, size: 14 },
+          bodyFont: { family: 'Barlow', size: 13 },
+          displayColors: true,
+          boxPadding: 4,
+        }
+      },
+      animation: { duration: 1200, easing: 'easeOutQuart' }
     },
     plugins,
   });
@@ -897,15 +1176,15 @@ function renderRecent() {
     const playerPointsHtml = Object.entries(totalPlayerPoints)
       .sort((a, b) => b[1] - a[1])
       .map(([name, pts]) => 
-        `<span style="font-weight:700;color:${PLAYER_COLORS[name]||'var(--text)'}">${name}: +${pts.toFixed(1)}</span>`
-      ).join(' • ');
+        `<span class="player-dot-chip"><span class="dot" style="background:${PLAYER_COLORS[name]||'var(--muted)'}"></span><span style="color:${PLAYER_COLORS[name]||'var(--text)'}">${name}: +${pts.toFixed(1)}</span></span>`
+      ).join('');
 
     return `<div class="race-weekend">
       <div class="race-header">
         <div class="race-flag">${race.country_flag || '🏁'}</div>
         <div class="race-info">
           <div class="race-title">${race.grand_prix}</div>
-          <div class="race-meta">Round ${race.round} • ${race.half} • ${playerPointsHtml}</div>
+          <div class="race-meta">Round ${race.round} • ${race.half}</div>
         </div>
         <div class="race-total-points">
           <div class="race-total-label">Total Points</div>
@@ -913,6 +1192,7 @@ function renderRecent() {
         </div>
       </div>
       <div class="sessions-row">${sessionTiles}</div>
+      <div class="race-player-dots">${playerPointsHtml}</div>
     </div>`;
   }).join('');
 
@@ -1029,7 +1309,10 @@ function renderUpcoming() {
             timeStr = 'TBA';
           }
           
-          return `<div class="upcoming-session-item">
+          const isRace = s.name && s.name.toLowerCase() === 'race';
+          const raceClass = isRace ? ' upcoming-session-race' : '';
+          
+          return `<div class="upcoming-session-item${raceClass}">
             <div class="upcoming-session-name">${s.name}</div>
             <div class="upcoming-session-time">${timeStr}</div>
           </div>`;
@@ -1050,6 +1333,11 @@ function renderUpcoming() {
             <span>${race.circuit}</span>
           </div>
         </div>
+        <div class="countdown" data-race-date="${race.date}">
+          <div class="countdown-unit"><div class="countdown-value" data-cd-days>--</div><div class="countdown-label">Days</div></div>
+          <div class="countdown-unit"><div class="countdown-value" data-cd-hours>--</div><div class="countdown-label">Hours</div></div>
+          <div class="countdown-unit"><div class="countdown-value" data-cd-mins>--</div><div class="countdown-label">Min</div></div>
+        </div>
       </div>
       <div class="upcoming-sessions">${sessionsHtml}</div>
     </div>`;
@@ -1069,12 +1357,14 @@ function renderUpcoming() {
   } else {
     paginationEl.style.display = 'none';
   }
+
+  // Trigger countdown update
+  setTimeout(updateCountdowns, 50);
 }
 
 function changeUpcomingPage(direction) {
   upcomingPage += direction;
   renderUpcoming();
-  // Scroll to top of upcoming races section
   document.getElementById('upcomingRaces').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -1516,6 +1806,90 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ===== ENHANCED UI: Sparkline charts in player cards =====
+let sparklineCharts = {};
+function renderSparklines(lb) {
+  // Destroy existing sparklines
+  Object.values(sparklineCharts).forEach(c => c.destroy && c.destroy());
+  sparklineCharts = {};
+  
+  const wd = DATA.worm_data;
+  if (!wd || !wd.players) return;
+  
+  lb.forEach(p => {
+    const canvasId = `sparkline-${p.name.replace(/\s/g,'-')}`;
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const playerData = wd.players[p.name];
+    if (!playerData || !playerData.length) return;
+    
+    // Calculate per-race deltas for the sparkline
+    const deltas = playerData.map((val, i) => i === 0 ? val : val - playerData[i-1]);
+    
+    canvas.width = canvas.parentElement.offsetWidth;
+    canvas.height = 45;
+    const ctx = canvas.getContext('2d');
+    const color = PLAYER_COLORS[p.name] || '#888';
+    
+    const gradient = ctx.createLinearGradient(0, 0, 0, 45);
+    gradient.addColorStop(0, color + '30');
+    gradient.addColorStop(1, color + '00');
+    
+    sparklineCharts[canvasId] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: deltas.map((_, i) => i),
+        datasets: [{
+          data: deltas,
+          borderColor: color,
+          backgroundColor: gradient,
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.4,
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } },
+        animation: { duration: 800, easing: 'easeOutQuart' }
+      }
+    });
+  });
+}
+
+// ===== ENHANCED UI: Countdown timers =====
+function updateCountdowns() {
+  const countdowns = document.querySelectorAll('.countdown[data-race-date]');
+  const now = new Date();
+  
+  countdowns.forEach(el => {
+    const raceDate = new Date(el.dataset.raceDate);
+    const diff = raceDate - now;
+    
+    if (diff <= 0) {
+      el.querySelector('[data-cd-days]').textContent = '0';
+      el.querySelector('[data-cd-hours]').textContent = '0';
+      el.querySelector('[data-cd-mins]').textContent = '0';
+      return;
+    }
+    
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    
+    el.querySelector('[data-cd-days]').textContent = days;
+    el.querySelector('[data-cd-hours]').textContent = String(hours).padStart(2, '0');
+    el.querySelector('[data-cd-mins]').textContent = String(mins).padStart(2, '0');
+  });
+}
+
+// Update countdowns every minute
+setInterval(updateCountdowns, 60000);
 
 load();
 setInterval(load, 60000);
