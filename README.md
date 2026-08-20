@@ -13,7 +13,8 @@ A Formula 1 fantasy draft app for the 2026 season. Four players each draft 5 F1 
   - Incremental updates (only fetch new sessions)
   - Force sync option to re-fetch all data from API
 - **Mid-Season Redraft** — Interactive snake-draft UI for the halfway point (Round 12)
-- **Two-Half Scoring** — Separate driver ownership for H1 (Rounds 1-12) and H2 (Rounds 13-24)
+- **Two-Half Scoring** — Separate driver ownership for H1 (Rounds 1-11) and H2 (Rounds 12-24)
+- **Driver Substitutions** — Temporary driver replacements managed via a Google Sheets tab, with points automatically attributed to the owning player
 - **Token Authentication** — Each player gets a unique token at draft start; picks are server-verified
 - **Turn-Based RBAC** — Only the current picker can select a driver; enforced on both frontend and backend
 
@@ -53,7 +54,7 @@ A Formula 1 fantasy draft app for the 2026 season. Four players each draft 5 F1 
 
 ## 🔄 Mid-Season Redraft
 
-At the halfway point (British GP, Round 12), all 4 players redraft all 20 drivers using a **snake draft**:
+At the halfway point (Hungarian GP, Round 11), all 4 players redraft all 20 drivers using a **snake draft**:
 
 ```
 Round 1: 1 → 2 → 3 → 4
@@ -181,7 +182,7 @@ python -m src.server
    ADMIN_PASSWORD=your_secret_here
    
    # Season Configuration
-   HALFWAY_ROUND=12
+   HALFWAY_ROUND=11
    ```
 
 **For Production (Render, Heroku, etc.):**
@@ -204,14 +205,15 @@ The seed script automatically creates these worksheets:
 
 | Worksheet | Description |
 |-----------|-------------|
-| **Draft Picks H1** | First-half driver ownership (Rounds 1-12) |
-| **Draft Picks H2** | Second-half driver ownership (Rounds 13-24) |
+| **Draft Picks H1** | First-half driver ownership (Rounds 1-11) |
+| **Draft Picks H2** | Second-half driver ownership (Rounds 12+) |
 | **Race Calendar** | 2026 F1 season schedule with 24 race weekends |
 | **Session Results** | Detailed results for every scored session |
 | **Leaderboard** | Current standings with H1/H2/Total breakdown |
 | **Scoring Rules** | Points tables for reference |
 | **Draft State** | JSON blob of live draft state (auto-created by draft engine) |
 | **Draft Picks Log** | Human-readable pick log (auto-created by draft engine) |
+| **Substitutions** | Temporary driver replacements (original → substitute, rounds, reason) |
 
 ## 🌐 API Endpoints
 
@@ -247,6 +249,7 @@ src/
 ├── config.py              — Environment-based configuration
 ├── server.py              — FastAPI web server with all endpoints
 ├── seed_data.py           — 2026 drivers, calendar, initial draft picks
+├── substitutions.py       — Driver substitution logic and helpers
 ├── main.py                — CLI entry point
 ├── models/                — Data models
 │   ├── driver.py          — Driver entity
@@ -269,7 +272,8 @@ src/
 │   ├── results.py         — Read/write session results
 │   ├── scores.py          — Write leaderboard
 │   ├── scoring_rules.py   — Write scoring reference
-│   └── session_times.py   — Cached session times (avoids API calls on page load)
+│   ├── session_times.py   — Cached session times (avoids API calls on page load)
+│   └── substitutions.py   — Read/write driver substitutions from Sheets
 ├── sync/                  — Data synchronization
 │   ├── scheduler.py       — Adaptive sync scheduling
 │   ├── state_manager.py   — Persistent state tracking
