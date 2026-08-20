@@ -59,10 +59,13 @@ class ScoringCalculator:
         self,
         player: DraftPlayer,
         session: Session,
+        substitutions: list | None = None,
     ) -> float:
         """Points for a single player in a single session, using correct half ownership."""
+        from src.substitutions import get_effective_drivers
         half = session.half
         drivers = player.drivers_for_half(half)
+        drivers = get_effective_drivers(drivers, session.round_number, substitutions)
         pts_map = self.calculate_session_points(session)
         
         # Build normalized lookup for driver name matching
@@ -144,11 +147,12 @@ class ScoringCalculator:
             ...
         ]
         """
-        from src.seed_data import DRIVERS_2026, TEAM_COLORS, COUNTRY_FLAGS
+        from src.seed_data import DRIVERS_2026, SUBSTITUTE_DRIVERS, TEAM_COLORS, COUNTRY_FLAGS
+        from src.substitutions import get_substitute_for_round, get_all_substitution_info
         
-        # Build a lookup for driver details
+        # Build a lookup for driver details (grid + substitutes)
         driver_info = {}
-        for d in DRIVERS_2026:
+        for d in DRIVERS_2026 + SUBSTITUTE_DRIVERS:
             driver_info[d["name"]] = {
                 "number": d["number"],
                 "team": d["team"],
@@ -161,6 +165,9 @@ class ScoringCalculator:
         
         # Pre-compute driver points per half
         finished = [s for s in sessions if s.is_finished or s.is_live]
+
+        # Collect active substitution info
+        active_subs = get_all_substitution_info()
 
         leaderboard = []
         for player in players:
@@ -179,15 +186,55 @@ class ScoringCalculator:
             drivers_h1.sort(key=lambda x: x["points"], reverse=True)
 
             drivers_h2 = []
+            sub_drivers_h2 = []
             for d in player.drivers_h2:
-                pts = self.calculate_driver_total(d, finished, half="H2")
+                # Points for this driver excluding substitution rounds
+                pts = 0.0
+                sub_rounds_for_driver: dict[str, list[int]] = {}
+                for s in finished:
+                    if s.half != "H2":
+                        continue
+                    sub_name = get_substitute_for_round(d, s.round_number)
+                    if sub_name:
+                        sub_rounds_for_driver.setdefault(sub_name, []).append(s.round_number)
+                    else:
+                        pts_map = self.calculate_session_points(s)
+                        pts_map_norm = {normalize_driver_name(k): v for k, v in pts_map.items()}
+                        pts += pts_map_norm.get(normalize_driver_name(d), 0.0)
+                pts = round(pts, 2)
+
                 info = driver_info.get(d, {})
-                drivers_h2.append({
-                    "name": d,
-                    "points": pts,
-                    **info,
-                })
+                entry = {"name": d, "points": pts, **info}
+                if sub_rounds_for_driver:
+                    entry["has_substitutions"] = True
+                    entry["substitution_rounds"] = {}
+                    for sn, rnds in sub_rounds_for_driver.items():
+                        entry["substitution_rounds"][sn] = rnds
+                drivers_h2.append(entry)
+
+                # Build separate sub driver entries
+                for sub_name, sub_rnds in sub_rounds_for_driver.items():
+                    sub_pts = 0.0
+                    for s in finished:
+                        if s.half != "H2" or s.round_number not in sub_rnds:
+                            continue
+                        pts_map = self.calculate_session_points(s)
+                        pts_map_norm = {normalize_driver_name(k): v for k, v in pts_map.items()}
+                        sub_pts += pts_map_norm.get(normalize_driver_name(sub_name), 0.0)
+                    sub_pts = round(sub_pts, 2)
+                    sub_info = driver_info.get(sub_name, {})
+                    sub_drivers_h2.append({
+                        "name": sub_name,
+                        "points": sub_pts,
+                        "substitute_for": d,
+                        "substitute_rounds": sub_rnds,
+                        "is_substitute": True,
+                        **sub_info,
+                    })
+
             drivers_h2.sort(key=lambda x: x["points"], reverse=True)
+            sub_drivers_h2.sort(key=lambda x: x["points"], reverse=True)
+            drivers_h2.extend(sub_drivers_h2)
 
             leaderboard.append({
                 "name": player.name,

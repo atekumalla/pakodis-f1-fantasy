@@ -44,6 +44,7 @@ def write_leaderboard(
     if has_h2:
         for i in range(5):
             header.append(f"H2 Driver {i+1}")
+        header.append("H2 Sub Drivers")
 
     rows = [header]
 
@@ -64,14 +65,19 @@ def write_leaderboard(
             else:
                 row.append("")
 
-        # H2 driver details
+        # H2 driver details (regular picks, then subs)
         if has_h2:
+            regular = [d for d in entry.get("drivers_h2", []) if not d.get("is_substitute")]
+            subs = [d for d in entry.get("drivers_h2", []) if d.get("is_substitute")]
             for i in range(5):
-                if i < len(entry["drivers_h2"]):
-                    d = entry["drivers_h2"][i]
-                    row.append(f"{d['name']} ({d['points']})")
+                if i < len(regular):
+                    d = regular[i]
+                    suffix = " *" if d.get("has_substitutions") else ""
+                    row.append(f"{d['name']} ({d['points']}){suffix}")
                 else:
                     row.append("")
+            sub_parts = [f"{d['name']} (sub for {d.get('substitute_for','?')}) ({d['points']})" for d in subs]
+            row.append("; ".join(sub_parts) if sub_parts else "")
 
         rows.append(row)
 

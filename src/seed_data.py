@@ -67,6 +67,7 @@ COUNTRY_FLAGS = {
     "BRA": "🇧🇷",  # Brazil
     "MEX": "🇲🇽",  # Mexico
     "CAN": "🇨🇦",  # Canada
+    "JPN": "🇯🇵",  # Japan
 }
 
 # Country name to flag emojis (for race locations)
@@ -119,6 +120,16 @@ DRIVERS_2026: list[dict] = [
     {"number": 11,  "name": "Sergio Perez",         "team": "Cadillac",          "acronym": "PER", "country": "MEX", "headshot_url": "https://media.formula1.com/content/dam/fom-website/drivers/S/SERPER01_Sergio_Perez/serper01.png.transform/1col/image.png"},
 ]
 
+# Drivers not on the 2026 grid who may substitute for a race
+SUBSTITUTE_DRIVERS: list[dict] = [
+    {"number": 22,  "name": "Yuki Tsunoda",         "team": "Red Bull Racing",   "acronym": "TSU", "country": "JPN", "headshot_url": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/Y/YUKTSU01_Yuki_Tsunoda/yuktsu01.png.transform/1col/image.png"},
+]
+
+
+def get_all_drivers_including_subs() -> list[dict]:
+    """Return all grid drivers plus substitute drivers."""
+    return DRIVERS_2026 + SUBSTITUTE_DRIVERS
+
 
 def get_all_driver_names() -> list[str]:
     """Return all 20 driver names."""
@@ -128,7 +139,7 @@ def get_all_driver_names() -> list[str]:
 def get_driver_by_name(name: str) -> dict | None:
     """Find a driver by name (case-insensitive partial match)."""
     name_lower = name.lower()
-    for d in DRIVERS_2026:
+    for d in DRIVERS_2026 + SUBSTITUTE_DRIVERS:
         if name_lower in d["name"].lower():
             return d
     return None

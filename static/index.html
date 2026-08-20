@@ -50,6 +50,9 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .driver-grid{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem}
 .driver-row{display:flex;align-items:center;gap:.75rem;padding:.5rem;border-radius:.5rem;background:var(--surface2);border-left:3px solid var(--team-color,var(--border));cursor:pointer;transition:all .15s}
 .driver-row:hover{background:var(--divider);transform:translateX(2px)}
+.sub-badge{display:inline-block;font-size:.6rem;font-weight:700;background:var(--gold);color:#000;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;letter-spacing:.02em}
+.sub-note{font-size:.6rem;color:var(--muted);margin-top:1px}
+.sub-banner{background:rgba(255,193,7,.12);border:1px solid rgba(255,193,7,.3);color:var(--gold);font-size:.75rem;padding:.5rem .75rem;border-radius:.375rem;margin-bottom:.5rem}
 .driver-photo{width:40px;height:40px;border-radius:50%;object-fit:cover;background:var(--border);flex-shrink:0}
 .driver-initials{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.75rem;font-family:'Barlow Condensed',sans-serif}
 .driver-details{flex:1;min-width:0}
@@ -884,22 +887,28 @@ function renderCards(lb) {
       const lastName = d.name ? d.name.split(' ').pop() : '';
       const firstName = d.name ? d.name.split(' ')[0] : '';
       const initials = (firstName[0] || '') + (lastName[0] || '');
+      const isSub = d.is_substitute;
+      const subBadge = isSub ? `<span class="sub-badge" title="Substitute for ${d.substitute_for} (R${(d.substitute_rounds||[]).join(',')})">🔄 Sub</span>` : '';
+      const subNote = isSub ? `<div class="sub-note">for ${d.substitute_for} · R${(d.substitute_rounds||[]).join(',')}</div>` : '';
+      const subStyle = isSub ? 'border-style:dashed;opacity:0.9;' : '';
       const photoHtml = headshotUrl 
         ? `<img class="driver-photo" src="${headshotUrl}" alt="${d.name}" onerror="this.outerHTML='<div class=\\'driver-photo driver-initials\\' style=\\'background:#${teamColor}\\'>${initials}</div>'">`
         : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
       const teamLogoUrl = getTeamLogoUrl(d.team);
       const teamLogoHtml = teamLogoUrl ? `<img class="driver-team-logo" src="${teamLogoUrl}" alt="${d.team}" onerror="this.style.display='none'">` : '';
-      return `<div class="driver-row" style="--team-color:#${teamColor}" onclick="openDriverDetailModal(${d.number})" title="Click for details">
+      return `<div class="driver-row" style="--team-color:#${teamColor};${subStyle}" onclick="openDriverDetailModal(${d.number})" title="${isSub ? 'Substitute driver — click for details' : 'Click for details'}">
         ${photoHtml}
         <div class="driver-details">
           <div class="driver-name-row">
             <span class="driver-flag">${flag}</span>
             <span class="driver-fullname">${firstName} <strong>${lastName}</strong></span>
+            ${subBadge}
           </div>
           <div class="driver-meta">
             <span class="driver-number">#${d.number || '?'}</span>
             <span class="driver-team">${d.team || ''}</span>
           </div>
+          ${subNote}
         </div>
         ${teamLogoHtml}
         <div class="driver-points">+${d.points}</div>
@@ -1085,6 +1094,12 @@ function renderRecent() {
     return; 
   }
 
+  function resultOwnerHtml(r) {
+    if (!r.owner) return '';
+    const subTag = r.substitute_for ? ' 🔄' : '';
+    return `<span class="owner">(${r.owner}${subTag})</span>`;
+  }
+
   // Group sessions by race (grand_prix + round)
   const raceGroups = new Map();
   sessions.forEach(s => {
@@ -1161,7 +1176,7 @@ function renderRecent() {
         <div class="session-results" id="${sessionId}-results">
           ${topResults.map(r => `<div class="result-row">
             <span class="pos">P${r.position||'—'}</span>
-            <span class="name">${r.driver}${r.owner ? `<span class="owner">(${r.owner})</span>` : ''}</span>
+            <span class="name">${r.driver}${resultOwnerHtml(r)}</span>
             <span class="pts">+${r.points}</span>
           </div>`).join('')}
         </div>
@@ -1237,7 +1252,7 @@ function toggleSessionResults(sessionId, round, sessionType) {
     const topResults = allResults.slice(0, 8);
     resultsEl.innerHTML = topResults.map(r => `<div class="result-row">
       <span class="pos">P${r.position||'—'}</span>
-      <span class="name">${r.driver}${r.owner ? `<span class="owner">(${r.owner})</span>` : ''}</span>
+      <span class="name">${r.driver}${resultOwnerHtml(r)}</span>
       <span class="pts">+${r.points}</span>
     </div>`).join('');
     resultsEl.dataset.expanded = 'false';
@@ -1246,7 +1261,7 @@ function toggleSessionResults(sessionId, round, sessionType) {
     // Expand - show all results
     resultsEl.innerHTML = allResults.map(r => `<div class="result-row">
       <span class="pos">P${r.position||'—'}</span>
-      <span class="name">${r.driver}${r.owner ? `<span class="owner">(${r.owner})</span>` : ''}</span>
+      <span class="name">${r.driver}${resultOwnerHtml(r)}</span>
       <span class="pts">+${r.points}</span>
     </div>`).join('');
     resultsEl.dataset.expanded = 'true';
@@ -1321,7 +1336,12 @@ function renderUpcoming() {
 
     const sprintBadge = race.sprint ? '<span style="background:var(--gold-light);color:var(--gold);padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;text-transform:uppercase">Sprint</span>' : '';
 
+    const subsHtml = (race.substitutions || []).map(sub =>
+      `<div class="sub-banner">🔄 <strong>${sub.substitute_driver}</strong> replaces <strong>${sub.original_driver}</strong> for this round — ${sub.reason}</div>`
+    ).join('');
+
     return `<div class="upcoming-race-card">
+      ${subsHtml}
       <div class="upcoming-race-header">
         <div class="upcoming-race-flag">${race.country_flag || '🏁'}</div>
         <div class="upcoming-race-info">
@@ -1659,6 +1679,12 @@ function openDriverDetailModal(driverNumber) {
   const detailTeamLogoUrl = getTeamLogoUrl(driverInfo.team);
   const detailTeamLogoHtml = detailTeamLogoUrl ? `<img class="driver-detail-team-logo" src="${detailTeamLogoUrl}" alt="${driverInfo.team}" style="border-color:#${teamColor}" onerror="this.style.display='none'">` : '';
   
+  const subNote = driverInfo.is_substitute
+    ? `<div class="sub-banner" style="margin-top:.5rem">🔄 Substitute for <strong>${driverInfo.substitute_for}</strong> in rounds ${(driverInfo.substitute_rounds||[]).join(', ')}</div>`
+    : (driverInfo.has_substitutions
+      ? `<div class="sub-banner" style="margin-top:.5rem">🔄 Replaced by substitute in rounds ${(driverInfo.substitution_rounds||[]).join(', ')}</div>`
+      : '');
+
   document.getElementById('driverDetailHeader').innerHTML = `
     ${photoHtml}
     <div class="driver-detail-info" style="flex:1">
@@ -1676,6 +1702,7 @@ function openDriverDetailModal(driverNumber) {
           <strong style="color:var(--red)">${driverInfo.points}</strong>
         </div>
       </div>
+      ${subNote}
     </div>
     ${detailTeamLogoHtml}
   `;

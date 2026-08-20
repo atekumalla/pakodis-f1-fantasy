@@ -89,6 +89,7 @@ async def lifespan(app: FastAPI):
         "sessions": [],
         "session_times": {},
         "calendar": [],
+        "substitutions": [],
     }
 
     # Try to load from Google Sheets
@@ -103,6 +104,7 @@ async def lifespan(app: FastAPI):
             from src.sheets.results import read_results
             from src.sheets.draft_state import SheetsDraftBackend
             from src.sheets.session_times import read_session_times
+            from src.sheets.substitutions import read_substitutions
 
             state["sheets_client"] = SheetsClient()
             state["players"] = read_draft_picks(state["sheets_client"])
@@ -113,6 +115,9 @@ async def lifespan(app: FastAPI):
 
             # Load cached session times (avoids API calls on page load)
             state["session_times"] = read_session_times(state["sheets_client"])
+
+            # Load substitutions (sheet is source of truth, code defaults as fallback)
+            state["substitutions"] = read_substitutions(state["sheets_client"])
 
             # Durable draft persistence (survives Render redeploys/restarts).
             draft_backend = SheetsDraftBackend(state["sheets_client"])
@@ -246,13 +251,25 @@ async def get_status():
         for d in p.drivers_h2:
             driver_to_player_h2[d] = p.name
 
+    # Build per-round substitute → player map for H2
+    from src.substitutions import get_all_substitution_info, get_original_for_substitute
+    substitutions = _app_state.get("substitutions")
+    sub_info_list = get_all_substitution_info(substitutions)
+    sub_to_player_by_round: dict[int, dict[str, str]] = {}
+    for si in sub_info_list:
+        orig = si["original_driver"]
+        owner = driver_to_player_h2.get(orig)
+        if owner:
+            for rnd in si["rounds"]:
+                sub_to_player_by_round.setdefault(rnd, {})[si["substitute_driver"]] = owner
+
     recent_sessions = []
     for s in finished[:20]:
         pts_map = calculator.calculate_session_points(s)
         # Per-player points for this session
         player_pts = {}
         for p in players:
-            pp = calculator.calculate_player_session_points(p, s)
+            pp = calculator.calculate_player_session_points(p, s, substitutions)
             if pp > 0:
                 player_pts[p.name] = round(pp, 2)
 
@@ -262,12 +279,24 @@ async def get_status():
             # Look up owner using normalized name for alias matching
             from src.scoring.calculator import normalize_driver_name
             owner = owner_map.get(r.driver_name)
+            substitute_for = None
             if not owner:
                 # Try alias matching (e.g. "Alexander ALBON" → "Alex Albon")
                 r_norm = normalize_driver_name(r.driver_name)
                 for draft_name, player_name in owner_map.items():
                     if normalize_driver_name(draft_name) == r_norm:
                         owner = player_name
+                        break
+            if not owner and not s.is_h1:
+                # Check if this driver is a substitute for this round
+                round_subs = sub_to_player_by_round.get(s.round_number, {})
+                r_norm = normalize_driver_name(r.driver_name)
+                for sub_name, sub_owner in round_subs.items():
+                    if normalize_driver_name(sub_name) == r_norm:
+                        owner = sub_owner
+                        substitute_for = get_original_for_substitute(
+                            r.driver_name, s.round_number, substitutions
+                        )
                         break
             results_list.append({
                 "driver": r.driver_name,
@@ -278,6 +307,7 @@ async def get_status():
                 "dns": r.dns,
                 "dsq": r.dsq,
                 "owner": owner,
+                "substitute_for": substitute_for,
             })
 
         # Get country flag for the race location
@@ -346,6 +376,7 @@ async def get_status():
         "sync_wait_seconds": sync_wait,
         "force_sync_available": force_sync_ready,
         "force_sync_wait_seconds": force_sync_wait,
+        "substitutions": sub_info_list,
         "spreadsheet_url": (
             f"https://docs.google.com/spreadsheets/d/{Config.GOOGLE_SHEETS_ID}"
             if Config.GOOGLE_SHEETS_ID else None
@@ -434,7 +465,7 @@ async def trigger_force_sync(x_admin_token: str | None = Header(default=None)):
 
 @app.get("/api/drivers")
 async def get_drivers():
-    """List all 20 drivers with team info and fantasy points scored so far."""
+    """List all drivers (grid + substitutes) with team info and fantasy points."""
     players = _app_state.get("players", [])
     driver_to_player_h1: dict[str, str] = {}
     driver_to_player_h2: dict[str, str] = {}
@@ -444,19 +475,27 @@ async def get_drivers():
         for d in p.drivers_h2:
             driver_to_player_h2[d] = p.name
 
-    from src.seed_data import TEAM_COLORS, COUNTRY_FLAGS
+    from src.seed_data import TEAM_COLORS, COUNTRY_FLAGS, SUBSTITUTE_DRIVERS
+    from src.substitutions import get_all_substitution_info
 
-    # Fantasy points scored by each driver so far, used by the draft board so
-    # the picker can see how each driver has performed before selecting them.
     sessions = _app_state.get("sessions", [])
     calculator: ScoringCalculator = _app_state.get("calculator")
     finished = [s for s in sessions if s.is_finished or s.is_live]
+    substitutions = _app_state.get("substitutions")
+    active_subs = get_all_substitution_info(substitutions)
+
+    # Build sub driver → original driver mapping
+    sub_driver_map: dict[str, dict] = {}
+    for si in active_subs:
+        sub_driver_map[si["substitute_driver"]] = si
 
     driver_points_total: dict[str, float] = {}
     driver_points_h1: dict[str, float] = {}
     driver_points_h2: dict[str, float] = {}
+
+    all_drivers = DRIVERS_2026 + SUBSTITUTE_DRIVERS
     if calculator:
-        for d in DRIVERS_2026:
+        for d in all_drivers:
             driver_points_h1[d["name"]] = calculator.calculate_driver_total(
                 d["name"], finished, half="H1"
             )
@@ -467,8 +506,15 @@ async def get_drivers():
                 driver_points_h1[d["name"]] + driver_points_h2[d["name"]], 2
             )
 
-    return [
-        {
+    result = []
+    for d in all_drivers:
+        is_sub = d["name"] in sub_driver_map
+        sub_meta = sub_driver_map.get(d["name"])
+        # For substitute drivers, ownership comes from the original driver's owner
+        owner_h2 = driver_to_player_h2.get(d["name"])
+        if not owner_h2 and sub_meta:
+            owner_h2 = driver_to_player_h2.get(sub_meta["original_driver"])
+        entry = {
             "number": d["number"],
             "name": d["name"],
             "team": d["team"],
@@ -478,13 +524,17 @@ async def get_drivers():
             "team_color": TEAM_COLORS.get(d["team"], "888888"),
             "headshot_url": d.get("headshot_url", ""),
             "owner_h1": driver_to_player_h1.get(d["name"]),
-            "owner_h2": driver_to_player_h2.get(d["name"]),
+            "owner_h2": owner_h2,
             "points": driver_points_total.get(d["name"], 0.0),
             "points_h1": driver_points_h1.get(d["name"], 0.0),
             "points_h2": driver_points_h2.get(d["name"], 0.0),
         }
-        for d in DRIVERS_2026
-    ]
+        if is_sub:
+            entry["is_substitute"] = True
+            entry["substitute_for"] = sub_meta["original_driver"]
+            entry["substitute_rounds"] = sub_meta["rounds"]
+        result.append(entry)
+    return result
 
 
 # ─── API: CHAMPIONSHIP STANDINGS ─────────────────────────────────────────────
@@ -500,16 +550,17 @@ async def get_standings():
         6: 8, 7: 6, 8: 4, 9: 2, 10: 1
     }
     
-    from src.seed_data import DRIVERS_2026, COUNTRY_FLAGS, TEAM_COLORS
+    from src.seed_data import DRIVERS_2026, SUBSTITUTE_DRIVERS, COUNTRY_FLAGS, TEAM_COLORS
     
     # Build driver name to team mapping (normalize names to handle case differences)
     # Session results use "Firstname LASTNAME", DRIVERS_2026 uses "Firstname Lastname"
     driver_to_team = {}
     driver_to_info = {}
-    for d in DRIVERS_2026:
+    all_known_drivers = DRIVERS_2026 + SUBSTITUTE_DRIVERS
+    for d in all_known_drivers:
         # Store both formats for matching
         driver_to_team[d["name"]] = d["team"]
-        driver_to_team[d["name"].upper()] = d["team"]  # FIRSTNAME LASTNAME
+        driver_to_team[d["name"].upper()] = d["team"]
         driver_to_info[d["name"].upper()] = d
     
     # Track driver points
@@ -550,7 +601,7 @@ async def get_standings():
     
     # First, create a dict with all drivers initialized to 0 points
     all_drivers = {}
-    for d in DRIVERS_2026:
+    for d in all_known_drivers:
         all_drivers[d["name"]] = {
             "points": 0,
             "team": d["team"],
@@ -560,8 +611,8 @@ async def get_standings():
     # Update with actual points from driver_points (which uses names from session results)
     for driver_name_raw, data in driver_points.items():
         driver_name_normalized = driver_name_raw.upper()
-        # Find matching driver in DRIVERS_2026
-        for d in DRIVERS_2026:
+        # Find matching driver in known drivers list
+        for d in all_known_drivers:
             if d["name"].upper() == driver_name_normalized:
                 all_drivers[d["name"]]["points"] = data["points"]
                 break
@@ -578,10 +629,10 @@ async def get_standings():
             "team_color": TEAM_COLORS.get(data["team"], "888888"),
         })
     
-    # Build constructor standings - include ALL teams from DRIVERS_2026
-    # Get unique teams from DRIVERS_2026
+    # Build constructor standings - include ALL teams from known drivers
+    # Get unique teams
     all_teams = {}
-    for d in DRIVERS_2026:
+    for d in all_known_drivers:
         if d["team"] not in all_teams:
             all_teams[d["team"]] = 0
     
@@ -617,12 +668,21 @@ async def get_calendar():
     Times are refreshed during the periodic background sync.
     """
     from src.seed_data import CALENDAR_2026, RACE_COUNTRY_FLAGS, PRESEEDED_SESSION_TIMES
+    from src.substitutions import get_all_substitution_info
     from datetime import datetime, date as dt_date, timedelta
     
     today = dt_date.today()
     
     # Use cached session times (loaded from sheets on startup, refreshed during sync)
     cached_times: dict[str, list[dict]] = _app_state.get("session_times", {})
+    substitutions = _app_state.get("substitutions")
+    active_subs = get_all_substitution_info(substitutions)
+
+    # Build round → substitutions lookup
+    round_subs: dict[int, list[dict]] = {}
+    for si in active_subs:
+        for rnd in si["rounds"]:
+            round_subs.setdefault(rnd, []).append(si)
 
     calendar_with_details = []
     for r in CALENDAR_2026:
@@ -666,6 +726,7 @@ async def get_calendar():
             "is_upcoming": is_upcoming,
             "country_flag": RACE_COUNTRY_FLAGS.get(r["country"], "🏁"),
             "sessions": sessions_info,
+            "substitutions": round_subs.get(r["round"], []),
         })
     
     return calendar_with_details
