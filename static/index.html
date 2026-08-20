@@ -78,6 +78,11 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .two-col>*{min-width:0}
 .section{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem;box-shadow:var(--shadow-sm)}
 .section-title{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem}
+.section-title.collapsible{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.section-title.collapsible:hover{color:var(--red)}
+.section-title .chevron{transition:transform .2s;font-size:.75rem;color:var(--muted)}
+.section-title.collapsed .chevron{transform:rotate(-90deg)}
+.section-body.collapsed{display:none}
 table{width:100%;border-collapse:collapse}
 th{font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:.5rem;border-bottom:2px solid var(--divider);text-align:center}
 th:nth-child(2){text-align:left}
@@ -336,7 +341,11 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
     <div id="h2hContent"></div>
   </div>
   <div class="section">
-    <div class="section-title">🏁 Recent Races</div>
+    <div class="section-title collapsible" onclick="toggleSection('recentSection')">
+      <span>🏁 Recent Races</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="recentSection">
     <div id="recentSessions"></div>
     <div class="pagination" id="sessionsPagination" style="display:none">
       <button class="pagination-btn" id="btnPrevSessions" onclick="changePage(-1)">
@@ -347,9 +356,14 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
         Next →
       </button>
     </div>
+    </div>
   </div>
   <div class="section">
-    <div class="section-title">📅 Upcoming Races</div>
+    <div class="section-title collapsible" onclick="toggleSection('upcomingSection')">
+      <span>📅 Upcoming Races</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="upcomingSection">
     <div id="upcomingRaces"></div>
     <div class="pagination" id="upcomingPagination" style="display:none">
       <button class="pagination-btn" id="btnPrevUpcoming" onclick="changeUpcomingPage(-1)">
@@ -359,6 +373,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
       <button class="pagination-btn" id="btnNextUpcoming" onclick="changeUpcomingPage(1)">
         Next →
       </button>
+    </div>
     </div>
   </div>
 </main>
@@ -1386,6 +1401,13 @@ function changeUpcomingPage(direction) {
   upcomingPage += direction;
   renderUpcoming();
   document.getElementById('upcomingRaces').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleSection(id) {
+  const body = document.getElementById(id);
+  const title = body.previousElementSibling;
+  body.classList.toggle('collapsed');
+  title.classList.toggle('collapsed');
 }
 
 // Half tabs

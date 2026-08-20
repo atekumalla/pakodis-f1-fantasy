@@ -148,7 +148,7 @@ class ScoringCalculator:
         ]
         """
         from src.seed_data import DRIVERS_2026, SUBSTITUTE_DRIVERS, TEAM_COLORS, COUNTRY_FLAGS
-        from src.substitutions import get_substitute_for_round, get_all_substitution_info
+        from src.substitutions import get_substitute_for_round, get_all_substitution_info, ACTIVE_SUBSTITUTIONS
         
         # Build a lookup for driver details (grid + substitutes)
         driver_info = {}
@@ -191,12 +191,19 @@ class ScoringCalculator:
                 # Points for this driver excluding substitution rounds
                 pts = 0.0
                 sub_rounds_for_driver: dict[str, list[int]] = {}
+
+                # Seed from active substitution config (ensures subs appear before the race)
+                for asub in ACTIVE_SUBSTITUTIONS:
+                    if asub.active and normalize_driver_name(asub.original_driver) == normalize_driver_name(d):
+                        sub_rounds_for_driver.setdefault(asub.substitute_driver, []).extend(asub.rounds)
+
                 for s in finished:
                     if s.half != "H2":
                         continue
                     sub_name = get_substitute_for_round(d, s.round_number)
                     if sub_name:
-                        sub_rounds_for_driver.setdefault(sub_name, []).append(s.round_number)
+                        if s.round_number not in sub_rounds_for_driver.get(sub_name, []):
+                            sub_rounds_for_driver.setdefault(sub_name, []).append(s.round_number)
                     else:
                         pts_map = self.calculate_session_points(s)
                         pts_map_norm = {normalize_driver_name(k): v for k, v in pts_map.items()}
