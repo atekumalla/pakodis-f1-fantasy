@@ -1100,6 +1100,12 @@ function renderWorm() {
   });
 }
 
+function resultOwnerHtml(r) {
+  if (!r.owner) return '';
+  const subTag = r.substitute_for ? ' 🔄' : '';
+  return `<span class="owner">(${r.owner}${subTag})</span>`;
+}
+
 function renderRecent() {
   const el = document.getElementById('recentSessions');
   const sessions = DATA.recent_sessions || [];
@@ -1107,12 +1113,6 @@ function renderRecent() {
     el.innerHTML = '<div style="color:var(--muted);font-size:.875rem">No results yet. Hit Sync to fetch data from OpenF1.</div>'; 
     document.getElementById('sessionsPagination').style.display = 'none';
     return; 
-  }
-
-  function resultOwnerHtml(r) {
-    if (!r.owner) return '';
-    const subTag = r.substitute_for ? ' 🔄' : '';
-    return `<span class="owner">(${r.owner}${subTag})</span>`;
   }
 
   // Group sessions by race (grand_prix + round)

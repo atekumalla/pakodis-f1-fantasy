@@ -236,7 +236,7 @@ async def get_status():
     calculator: ScoringCalculator = _app_state.get("calculator")
     state_mgr = _app_state.get("state_manager")
 
-    leaderboard = calculator.build_leaderboard(players, sessions)
+    leaderboard = calculator.build_leaderboard(players, sessions, _app_state.get("substitutions"))
 
     # Recent finished sessions
     finished = [s for s in sessions if s.is_finished or s.is_live]
@@ -740,7 +740,7 @@ async def get_share_text():
     sessions = _app_state.get("sessions", [])
     calculator = _app_state.get("calculator")
 
-    leaderboard = calculator.build_leaderboard(players, sessions)
+    leaderboard = calculator.build_leaderboard(players, sessions, _app_state.get("substitutions"))
 
     finished_count = sum(1 for s in sessions if s.is_finished and s.session_type.value == "race")
     rank_emojis = ["🥇", "🥈", "🥉", "4️⃣"]

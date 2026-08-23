@@ -77,6 +77,7 @@ class ScoringCalculator:
         player: DraftPlayer,
         sessions: list[Session],
         half: str | None = None,
+        substitutions: list | None = None,
     ) -> float:
         """
         Total points for a fantasy player across sessions.
@@ -86,12 +87,13 @@ class ScoringCalculator:
             sessions: All scored sessions
             half: If set ('H1' or 'H2'), only count sessions in that half.
                   If None, count all sessions using correct half ownership.
+            substitutions: Active substitutions list. If None, uses code defaults.
         """
         total = 0.0
         for session in sessions:
             if half and session.half != half:
                 continue
-            total += self.calculate_player_session_points(player, session)
+            total += self.calculate_player_session_points(player, session, substitutions)
         return round(total, 2)
 
     def calculate_driver_total(
@@ -136,6 +138,7 @@ class ScoringCalculator:
         self,
         players: list[DraftPlayer],
         sessions: list[Session],
+        substitutions: list | None = None,
     ) -> list[dict]:
         """
         Build a sorted leaderboard.
@@ -149,6 +152,8 @@ class ScoringCalculator:
         """
         from src.seed_data import DRIVERS_2026, SUBSTITUTE_DRIVERS, TEAM_COLORS, COUNTRY_FLAGS
         from src.substitutions import get_substitute_for_round, get_all_substitution_info, ACTIVE_SUBSTITUTIONS
+
+        active_substitutions = substitutions if substitutions is not None else ACTIVE_SUBSTITUTIONS
         
         # Build a lookup for driver details (grid + substitutes)
         driver_info = {}
@@ -167,12 +172,12 @@ class ScoringCalculator:
         finished = [s for s in sessions if s.is_finished or s.is_live]
 
         # Collect active substitution info
-        active_subs = get_all_substitution_info()
+        active_subs = get_all_substitution_info(active_substitutions)
 
         leaderboard = []
         for player in players:
-            h1_total = self.calculate_player_total(player, finished, half="H1")
-            h2_total = self.calculate_player_total(player, finished, half="H2")
+            h1_total = self.calculate_player_total(player, finished, half="H1", substitutions=active_substitutions)
+            h2_total = self.calculate_player_total(player, finished, half="H2", substitutions=active_substitutions)
 
             drivers_h1 = []
             for d in player.drivers_h1:
@@ -193,14 +198,14 @@ class ScoringCalculator:
                 sub_rounds_for_driver: dict[str, list[int]] = {}
 
                 # Seed from active substitution config (ensures subs appear before the race)
-                for asub in ACTIVE_SUBSTITUTIONS:
+                for asub in active_substitutions:
                     if asub.active and normalize_driver_name(asub.original_driver) == normalize_driver_name(d):
                         sub_rounds_for_driver.setdefault(asub.substitute_driver, []).extend(asub.rounds)
 
                 for s in finished:
                     if s.half != "H2":
                         continue
-                    sub_name = get_substitute_for_round(d, s.round_number)
+                    sub_name = get_substitute_for_round(d, s.round_number, active_substitutions)
                     if sub_name:
                         if s.round_number not in sub_rounds_for_driver.get(sub_name, []):
                             sub_rounds_for_driver.setdefault(sub_name, []).append(s.round_number)

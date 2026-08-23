@@ -21,7 +21,7 @@ ACTIVE_SUBSTITUTIONS: list[DriverSubstitution] = [
     DriverSubstitution(
         original_driver="Isack Hadjar",
         substitute_driver="Yuki Tsunoda",
-        rounds=[15],
+        rounds=[12],
         reason="Driver replacement for Dutch GP",
         active=True,
     ),
