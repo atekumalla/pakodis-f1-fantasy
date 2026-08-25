@@ -760,7 +760,7 @@ async def get_share_text():
 
     if Config.DASHBOARD_URL:
         lines.append("")
-        lines.append(f"🔗 _Updated live at {Config.DASHBOARD_URL}_")
+        lines.append(f"🔗 Live standings: {Config.DASHBOARD_URL}")
 
     return {"text": "\n".join(lines)}
 

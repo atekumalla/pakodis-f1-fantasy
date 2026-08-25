@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F1 2026 Fantasy Draft — Enhanced Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* ===== ENHANCEMENT 1: CSS Custom Properties with richer palette ===== */
+:root {
+  --bg: #0a0e14;
+  --surface: #141921;
+  --surface2: #1a2029;
+  --surface-glass: rgba(20, 25, 33, 0.75);
+  --border: #252d3a;
+  --divider: #1e2633;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --faint: #4d5566;
+  --red: #e10600;
+  --red-hover: #ff1e00;
+  --red-glow: rgba(225, 6, 0, 0.3);
+  --red-light: #3a0a0a;
+  --gold: #f59e0b;
+  --gold-light: #451a03;
+  --blue: #3b82f6;
+  --blue-light: #1e3a5f;
+  --green: #10b981;
+  --purple: #8b5cf6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.4);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.5);
+  --shadow-glow: 0 0 30px var(--red-glow);
+  --radius: 1rem;
+  --radius-sm: .5rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100dvh;
+  font-family: 'Barlow', system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* ===== ENHANCEMENT 2: Subtle animated background grid ===== */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: 
+    linear-gradient(rgba(225, 6, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(225, 6, 0, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== ENHANCEMENT 3: Glassmorphism header with blur ===== */
+.hdr {
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 2px solid var(--red);
+  padding: .75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-md), 0 2px 20px var(--red-glow);
+}
+
+.hdr-brand { display: flex; align-items: center; gap: .75rem; }
+.hdr-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.hdr-title span { color: var(--red); }
+.hdr-sub {
+  font-size: .75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.f1-logo { height: 2.2rem; }
+
+/* ===== ENHANCEMENT 4: Better nav buttons with hover glow ===== */
+.hdr-actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem .9rem;
+  border-radius: .5rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  transition: all .25s cubic-bezier(.4,0,.2,1);
+  white-space: nowrap;
+  text-decoration: none;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-sec {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-sec:hover {
+  background: var(--divider);
+  border-color: var(--red);
+  box-shadow: 0 0 15px rgba(225,6,0,.15);
+  transform: translateY(-1px);
+}
+
+.btn-red {
+  background: var(--red);
+  color: #fff;
+}
+.btn-red:hover {
+  background: var(--red-hover);
+  box-shadow: 0 0 20px var(--red-glow);
+  transform: translateY(-1px);
+}
+
+/* ===== MAIN CONTAINER ===== */
+.main {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== ENHANCEMENT 5: Dramatic leader banner with animation ===== */
+.leader-banner {
+  background: linear-gradient(135deg, #e10600 0%, #b30500 40%, #8b0000 70%, #5c0000 100%);
+  border-radius: var(--radius);
+  padding: 2rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-glow), var(--shadow-lg);
+  animation: bannerGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes bannerGlow {
+  0% { box-shadow: 0 0 30px rgba(225,6,0,.3), var(--shadow-lg); }
+  100% { box-shadow: 0 0 60px rgba(225,6,0,.5), var(--shadow-lg); }
+}
+
+/* Checkered flag pattern overlay */
+.leader-banner::before {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  width: 300px;
+  height: 300px;
+  background: 
+    repeating-conic-gradient(rgba(255,255,255,.06) 0% 25%, transparent 0% 50%) 
+    0 0 / 30px 30px;
+  border-radius: 50%;
+  animation: rotatePattern 30s linear infinite;
+}
+
+@keyframes rotatePattern {
+  to { transform: rotate(360deg); }
+}
+
+/* Animated racing stripe */
+.leader-banner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+.leader-content { position: relative; z-index: 1; }
+.leader-label {
+  font-size: .9rem;
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  font-weight: 700;
+  opacity: .85;
+  margin-bottom: .25rem;
+}
+.leader-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 2px 20px rgba(0,0,0,.3);
+}
+.leader-pts {
+  font-size: 1.1rem;
+  opacity: .85;
+  margin-top: .5rem;
+}
+.leader-pts strong { opacity: 1; font-size: 1.3rem; }
+.leader-trophy {
+  font-size: 4rem;
+  filter: drop-shadow(0 0 20px rgba(255,215,0,.4));
+  animation: trophyBounce 2s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+@keyframes trophyBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ===== ENHANCEMENT 6: Animated half-selector tabs ===== */
+.half-tabs-container { display: flex; justify-content: center; }
+.half-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 4px;
+  border: 1px solid var(--border);
+}
+.half-tab {
+  padding: 8px 24px;
+  border-radius: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .25s cubic-bezier(.4,0,.2,1);
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.half-tab:hover:not(.active) {
+  background: var(--surface2);
+  color: var(--red);
+}
+.half-tab.active {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 2px 10px var(--red-glow);
+}
+
+/* ===== ENHANCEMENT 7: Player cards with glassmorphism & micro-interactions ===== */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.player-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+}
+
+/* Colored top bar with gradient */
+.player-tile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--player-color), var(--player-color-end, var(--player-color)));
+}
+
+.player-tile:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--player-color);
+}
+
+/* Subtle glow on hover */
+.player-tile:hover::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at top, rgba(225,6,0,.05), transparent 70%);
+  pointer-events: none;
+}
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.player-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--player-color);
+}
+
+.player-rank {
+  font-size: .8rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; box-shadow: 0 0 15px rgba(255,215,0,.3); }
+.rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: #000; }
+.rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: #fff; }
+.rank-other { background: var(--surface2); color: var(--muted); }
+
+.player-points {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  margin-bottom: .5rem;
+}
+
+.player-total {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.player-breakdown {
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+/* ===== ENHANCEMENT 8: Mini sparkline in player card ===== */
+.mini-chart-wrap {
+  height: 45px;
+  margin: .75rem 0;
+  opacity: .6;
+  transition: opacity .3s;
+  position: relative;
+}
+.player-tile:hover .mini-chart-wrap { opacity: 1; }
+.mini-chart-wrap canvas { width: 100% !important; height: 45px !important; }
+
+/* ===== ENHANCEMENT 9: Better driver rows with team color accents ===== */
+.half-label {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  font-weight: 700;
+  margin: 1rem 0 .5rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--divider);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.half-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--divider);
+}
+
+.driver-grid { display: flex; flex-direction: column; gap: .5rem; }
+
+.driver-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .6rem .75rem;
+  border-radius: .5rem;
+  background: var(--surface2);
+  border-left: 3px solid var(--team-color, var(--border));
+  cursor: pointer;
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+
+.driver-row:hover {
+  background: var(--divider);
+  transform: translateX(4px);
+  box-shadow: -3px 0 10px rgba(var(--team-color-rgb, 128,128,128), .2);
+}
+
+.driver-photo {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--border);
+  flex-shrink: 0;
+  border: 2px solid var(--team-color, var(--border));
+}
+
+.driver-details { flex: 1; min-width: 0; }
+.driver-name-row { display: flex; align-items: center; gap: .5rem; }
+.driver-flag { font-size: .9rem; }
+.driver-fullname {
+  font-weight: 700;
+  font-size: .9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.driver-meta {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .7rem;
+  color: var(--muted);
+}
+.driver-number {
+  font-weight: 800;
+  font-size: .75rem;
+  min-width: 24px;
+  text-align: center;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.driver-team {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.team-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 4px;
+  padding: 2px;
+}
+.driver-points {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--red);
+  min-width: 45px;
+  text-align: right;
+}
+
+/* ===== ENHANCEMENT 10: Two-column layout with better sections ===== */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+.two-col > * { min-width: 0; }
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.section-title .icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--red);
+  color: #fff;
+  border-radius: 6px;
+  font-size: .85rem;
+}
+
+/* ===== ENHANCEMENT 11: Better points table with position indicators ===== */
+.points-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; }
+.points-table th {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  padding: .5rem .75rem;
+  text-align: center;
+}
+.points-table th:nth-child(2) { text-align: left; }
+
+.points-table tbody tr {
+  background: var(--surface2);
+  border-radius: .5rem;
+  transition: all .2s;
+}
+.points-table tbody tr:hover {
+  background: var(--divider);
+  transform: scale(1.01);
+}
+
+.points-table td {
+  padding: .75rem;
+  text-align: center;
+  font-size: .9rem;
+  border: none;
+}
+.points-table td:first-child { border-radius: .5rem 0 0 .5rem; }
+.points-table td:last-child { border-radius: 0 .5rem .5rem 0; }
+
+.pos-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: .85rem;
+}
+.pos-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
+.pos-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: #000; }
+.pos-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: #fff; }
+.pos-4 { background: var(--surface); color: var(--muted); }
+
+.total-pts {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--red);
+}
+
+.gap-indicator {
+  font-size: .8rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.gap-leader { color: var(--green); font-weight: 700; }
+
+.player-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: .75rem;
+}
+.trend-up { color: var(--green); }
+.trend-down { color: var(--red); }
+
+/* ===== ENHANCEMENT 12: Better score worm chart area ===== */
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ===== ENHANCEMENT 13: Race weekend cards with circuit accents ===== */
+.race-weekend {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all .25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.race-weekend:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--red);
+}
+
+/* Subtle circuit silhouette in background */
+.race-weekend::after {
+  content: '';
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(ellipse, rgba(225,6,0,.04), transparent);
+  pointer-events: none;
+}
+
+.race-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--divider);
+}
+
+.race-flag { font-size: 2.5rem; }
+
+.race-info { flex: 1; }
+.race-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.race-date-badge {
+  display: inline-block;
+  background: var(--red);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .85rem;
+  margin-right: .5rem;
+}
+.race-meta {
+  font-size: .8rem;
+  color: var(--muted);
+  margin-top: .25rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.race-round-badge {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: .75rem;
+}
+
+.race-total-points { text-align: right; }
+.race-total-label {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.race-total-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--red);
+  text-shadow: 0 0 20px var(--red-glow);
+}
+
+/* Session result tiles */
+.sessions-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.session-tile {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  border-left: 3px solid var(--session-color, var(--red));
+  transition: all .2s;
+}
+.session-tile:hover {
+  background: var(--divider);
+  transform: translateY(-2px);
+}
+
+.session-tile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .75rem;
+}
+.session-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.badge-race { background: var(--red-light); color: var(--red); border: 1px solid rgba(225,6,0,.2); }
+.badge-quali { background: var(--blue-light); color: var(--blue); border: 1px solid rgba(59,130,246,.2); }
+
+.session-tile-points {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--session-color, var(--red));
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: .82rem;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.result-row:last-child { border-bottom: none; }
+.result-row .pos {
+  font-weight: 700;
+  width: 28px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.result-row .name { flex: 1; }
+.result-row .owner {
+  font-size: .7rem;
+  color: var(--muted);
+  margin-left: 4px;
+}
+.result-row .pts {
+  font-weight: 700;
+  color: var(--red);
+  font-family: 'Barlow Condensed', sans-serif;
+  min-width: 35px;
+  text-align: right;
+}
+
+/* Player summary under each race */
+.race-player-summary {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: .5rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--divider);
+}
+.player-pts-chip {
+  font-size: .8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.player-pts-chip .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ===== ENHANCEMENT 14: Upcoming races with countdown ===== */
+.upcoming-race-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+  transition: all .25s;
+}
+.upcoming-race-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--gold);
+}
+
+.upcoming-race-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--divider);
+}
+.upcoming-race-flag { font-size: 2rem; }
+.upcoming-race-info { flex: 1; }
+.upcoming-race-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.upcoming-race-meta {
+  font-size: .8rem;
+  color: var(--muted);
+  margin-top: .25rem;
+}
+
+/* Countdown timer */
+.countdown {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+.countdown-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .5rem .75rem;
+  min-width: 52px;
+}
+.countdown-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gold);
+  line-height: 1;
+}
+.countdown-label {
+  font-size: .6rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.upcoming-sessions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: .75rem;
+}
+.upcoming-session-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  transition: all .2s;
+}
+.upcoming-session-item:hover {
+  background: var(--divider);
+  border-color: var(--gold);
+}
+.upcoming-session-name {
+  font-weight: 700;
+  font-size: .875rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  text-transform: uppercase;
+}
+.upcoming-session-time {
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+/* ===== ENHANCEMENT 15: Stats summary bar ===== */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all .25s;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--stat-color, var(--red));
+}
+.stat-icon {
+  font-size: 1.5rem;
+  margin-bottom: .25rem;
+}
+.stat-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--stat-color, var(--red));
+  line-height: 1;
+}
+.stat-label {
+  font-size: .75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-weight: 600;
+  margin-top: .25rem;
+}
+
+/* ===== ENHANCEMENT 16: Head-to-head comparison widget ===== */
+.h2h-widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+.h2h-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.h2h-bar-container {
+  margin-bottom: .75rem;
+}
+.h2h-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: .85rem;
+  font-weight: 700;
+  margin-bottom: .35rem;
+}
+.h2h-bar {
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  background: var(--surface2);
+}
+.h2h-bar-fill {
+  height: 100%;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+.h2h-metric {
+  font-size: .7rem;
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: .15rem;
+}
+
+/* ===== ENHANCEMENT 17: Animated number counters ===== */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in {
+  animation: countUp .5s ease-out forwards;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--faint);
+  font-size: .75rem;
+  border-top: 1px solid var(--divider);
+  margin-top: 1rem;
+}
+.footer a { color: var(--red); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .cards { grid-template-columns: repeat(2, 1fr); }
+  .two-col { grid-template-columns: 1fr; }
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .main { padding: 1rem; gap: 1rem; }
+  .cards { grid-template-columns: 1fr; }
+  .hdr { padding: .6rem .75rem; flex-wrap: wrap; gap: .5rem; }
+  .hdr-title { font-size: 1.2rem; }
+  .hdr-actions { width: 100%; justify-content: center; }
+  .btn { padding: .35rem .55rem; font-size: .72rem; }
+  .leader-banner { padding: 1.25rem; }
+  .leader-name { font-size: 2rem !important; }
+  .stats-bar { grid-template-columns: 1fr 1fr; }
+  .countdown-unit { min-width: 42px; padding: .4rem .5rem; }
+  .countdown-value { font-size: 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="hdr">
+  <div class="hdr-brand">
+    <div>
+      <div class="hdr-title">
+        <svg class="f1-logo" viewBox="0 0 120 40" fill="var(--red)"><text x="0" y="32" font-family="'Barlow Condensed',sans-serif" font-weight="800" font-size="38" font-style="italic">F1</text></svg>
+        2026 Fantasy Draft
+      </div>
+      <div class="hdr-sub">2026 Season · 23 Races · Halfway at Round 11</div>
+    </div>
+  </div>
+  <div class="hdr-actions">
+    <a class="btn btn-sec" href="/draft">🏁 Mid-Season Draft</a>
+    <button class="btn btn-sec">📋 Rules</button>
+    <button class="btn btn-sec">🏎️ Drivers</button>
+    <button class="btn btn-sec">🏁 Constructors</button>
+    <button class="btn btn-red">↻ Sync</button>
+    <button class="btn btn-sec" style="background:#25D366;color:#fff;border-color:#25D366">📱 Share</button>
+    <a class="btn btn-sec" href="#">📊 Sheet</a>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ===== NEW: STATS SUMMARY BAR ===== -->
+  <div class="stats-bar">
+    <div class="stat-card" style="--stat-color: var(--gold)">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-value animate-in">11</div>
+      <div class="stat-label">Races Complete</div>
+    </div>
+    <div class="stat-card" style="--stat-color: var(--red)">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-value animate-in">4,072</div>
+      <div class="stat-label">Total Points Scored</div>
+    </div>
+    <div class="stat-card" style="--stat-color: var(--green)">
+      <div class="stat-icon">📈</div>
+      <div class="stat-value animate-in">9</div>
+      <div class="stat-label">Gap to Leader</div>
+    </div>
+    <div class="stat-card" style="--stat-color: var(--blue)">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-value animate-in">Rohit</div>
+      <div class="stat-label">Hot Streak (3 wins)</div>
+    </div>
+  </div>
+
+  <!-- ===== LEADER BANNER ===== -->
+  <div class="leader-banner">
+    <div class="leader-content">
+      <div class="leader-label">🏆 Current Leader</div>
+      <div class="leader-name">Prateik</div>
+      <div class="leader-pts"><strong>1108 pts</strong> (H1: 1108, H2: 0)</div>
+    </div>
+    <div class="leader-trophy">🏆</div>
+  </div>
+
+  <!-- ===== HALF TABS ===== -->
+  <div class="half-tabs-container">
+    <div class="half-tabs">
+      <div class="half-tab active">Combined</div>
+      <div class="half-tab">H1 (Rd 1-12)</div>
+      <div class="half-tab">H2 (Rd 13-24)</div>
+    </div>
+  </div>
+
+  <!-- ===== PLAYER CARDS ===== -->
+  <div class="cards">
+    <!-- Player 1: Prateik -->
+    <div class="player-tile" style="--player-color: #e10600; --player-color-end: #ff4d00">
+      <div class="player-header">
+        <div>
+          <div class="player-name" style="color: var(--red)">Prateik</div>
+        </div>
+        <span class="player-rank rank-1">#1</span>
+      </div>
+      <div class="player-points">
+        <div class="player-total">1108</div>
+        <div class="player-breakdown">H1: 1108 · H2: 0</div>
+      </div>
+      <!-- NEW: Mini sparkline chart -->
+      <div class="mini-chart-wrap"><canvas id="spark1"></canvas></div>
+      <div class="half-label">H2 Picks</div>
+      <div class="driver-grid">
+        <div class="driver-row" style="--team-color: #ff8000">
+          <div class="driver-photo driver-initials" style="background: #ff8000; border-color: #ff8000">LN</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇬🇧</span>
+              <span class="driver-fullname">Lando Norris</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#4</span>
+              <span class="driver-team">McLaren</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+        <div class="driver-row" style="--team-color: #3671C6">
+          <div class="driver-photo driver-initials" style="background: #3671C6; border-color: #3671C6">MV</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇳🇱</span>
+              <span class="driver-fullname">Max Verstappen</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#1</span>
+              <span class="driver-team">Red Bull Racing</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+        <div class="driver-row" style="--team-color: #2293D1">
+          <div class="driver-photo driver-initials" style="background: #2293D1; border-color: #2293D1">FC</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇦🇷</span>
+              <span class="driver-fullname">Franco Colapinto</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#43</span>
+              <span class="driver-team">Alpine</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player 2: Anup -->
+    <div class="player-tile" style="--player-color: #e10600; --player-color-end: #cc0000">
+      <div class="player-header">
+        <div>
+          <div class="player-name" style="color: #e10600">Anup</div>
+        </div>
+        <span class="player-rank rank-2">#2</span>
+      </div>
+      <div class="player-points">
+        <div class="player-total">1099</div>
+        <div class="player-breakdown">H1: 1099 · H2: 0</div>
+      </div>
+      <div class="mini-chart-wrap"><canvas id="spark2"></canvas></div>
+      <div class="half-label">H2 Picks</div>
+      <div class="driver-grid">
+        <div class="driver-row" style="--team-color: #E8002D">
+          <div class="driver-photo driver-initials" style="background: #E8002D; border-color: #E8002D">LH</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇬🇧</span>
+              <span class="driver-fullname">Lewis Hamilton</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#44</span>
+              <span class="driver-team">Ferrari</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+        <div class="driver-row" style="--team-color: #ff8000">
+          <div class="driver-photo driver-initials" style="background: #ff8000; border-color: #ff8000">OP</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇦🇺</span>
+              <span class="driver-fullname">Oscar Piastri</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#81</span>
+              <span class="driver-team">McLaren</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+        <div class="driver-row" style="--team-color: #6692FF">
+          <div class="driver-photo driver-initials" style="background: #6692FF; border-color: #6692FF">AL</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇬🇧</span>
+              <span class="driver-fullname">Arvid Lindblad</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#41</span>
+              <span class="driver-team">Racing Bulls</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player 3: Rohit -->
+    <div class="player-tile" style="--player-color: #3b82f6; --player-color-end: #1d4ed8">
+      <div class="player-header">
+        <div>
+          <div class="player-name" style="color: #3b82f6">Rohit</div>
+        </div>
+        <span class="player-rank rank-3">#3</span>
+      </div>
+      <div class="player-points">
+        <div class="player-total">1021</div>
+        <div class="player-breakdown">H1: 1021 · H2: 0</div>
+      </div>
+      <div class="mini-chart-wrap"><canvas id="spark3"></canvas></div>
+      <div class="half-label">H2 Picks</div>
+      <div class="driver-grid">
+        <div class="driver-row" style="--team-color: #27F4D2">
+          <div class="driver-photo driver-initials" style="background: #27F4D2; color: #000; border-color: #27F4D2">KA</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇮🇹</span>
+              <span class="driver-fullname">Kimi Antonelli</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#12</span>
+              <span class="driver-team">Mercedes</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+        <div class="driver-row" style="--team-color: #6692FF">
+          <div class="driver-photo driver-initials" style="background: #6692FF; border-color: #6692FF">IH</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇫🇷</span>
+              <span class="driver-fullname">Isack Hadjar</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#6</span>
+              <span class="driver-team">Racing Bulls</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player 4: Abhinav -->
+    <div class="player-tile" style="--player-color: #10b981; --player-color-end: #059669">
+      <div class="player-header">
+        <div>
+          <div class="player-name" style="color: #10b981">Abhinav</div>
+        </div>
+        <span class="player-rank rank-other">#4</span>
+      </div>
+      <div class="player-points">
+        <div class="player-total">844</div>
+        <div class="player-breakdown">H1: 844 · H2: 0</div>
+      </div>
+      <div class="mini-chart-wrap"><canvas id="spark4"></canvas></div>
+      <div class="half-label">H2 Picks</div>
+      <div class="driver-grid">
+        <div class="driver-row" style="--team-color: #27F4D2">
+          <div class="driver-photo driver-initials" style="background: #27F4D2; color: #000; border-color: #27F4D2">GR</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇬🇧</span>
+              <span class="driver-fullname">George Russell</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#63</span>
+              <span class="driver-team">Mercedes</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+        <div class="driver-row" style="--team-color: #E8002D">
+          <div class="driver-photo driver-initials" style="background: #E8002D; border-color: #E8002D">CL</div>
+          <div class="driver-details">
+            <div class="driver-name-row">
+              <span class="driver-flag">🇲🇨</span>
+              <span class="driver-fullname">Charles Leclerc</span>
+            </div>
+            <div class="driver-meta">
+              <span class="driver-number">#16</span>
+              <span class="driver-team">Ferrari</span>
+            </div>
+          </div>
+          <span class="driver-points">+0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== POINTS TABLE & SCORE WORM ===== -->
+  <div class="two-col">
+    <!-- Points Table -->
+    <div class="section">
+      <div class="section-title">
+        <span class="icon">📊</span>
+        Points Table
+      </div>
+      <table class="points-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>H1</th>
+            <th>H2</th>
+            <th>Total</th>
+            <th>Gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pos-badge pos-1">1</span></td>
+            <td style="text-align:left;font-weight:700">
+              Prateik
+              <span class="player-trend trend-up">▲ 2</span>
+            </td>
+            <td>1108</td>
+            <td>0</td>
+            <td class="total-pts">1108</td>
+            <td><span class="gap-leader">Leader</span></td>
+          </tr>
+          <tr>
+            <td><span class="pos-badge pos-2">2</span></td>
+            <td style="text-align:left;font-weight:700">
+              Anup
+              <span class="player-trend trend-down">▼ 1</span>
+            </td>
+            <td>1099</td>
+            <td>0</td>
+            <td class="total-pts">1099</td>
+            <td><span class="gap-indicator">-9</span></td>
+          </tr>
+          <tr>
+            <td><span class="pos-badge pos-3">3</span></td>
+            <td style="text-align:left;font-weight:700">
+              Rohit
+            </td>
+            <td>1021</td>
+            <td>0</td>
+            <td class="total-pts">1021</td>
+            <td><span class="gap-indicator">-87</span></td>
+          </tr>
+          <tr>
+            <td><span class="pos-badge pos-4">4</span></td>
+            <td style="text-align:left;font-weight:700">
+              Abhinav
+              <span class="player-trend trend-down">▼ 1</span>
+            </td>
+            <td>844</td>
+            <td>0</td>
+            <td class="total-pts">844</td>
+            <td><span class="gap-indicator">-264</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Score Worm -->
+    <div class="section">
+      <div class="section-title">
+        <span class="icon">📈</span>
+        Score Worm
+      </div>
+      <div class="chart-container">
+        <canvas id="scoreWorm"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== NEW: HEAD-TO-HEAD COMPARISON ===== -->
+  <div class="h2h-widget">
+    <div class="h2h-title">
+      <span class="icon" style="background:var(--purple)">⚔️</span>
+      Head-to-Head: Title Fight
+    </div>
+    <div class="h2h-bar-container">
+      <div class="h2h-labels">
+        <span style="color: #e10600">Prateik · 1108</span>
+        <span style="color: #ff4d00">Anup · 1099</span>
+      </div>
+      <div class="h2h-bar">
+        <div class="h2h-bar-fill" style="width: 50.2%; background: linear-gradient(90deg, #e10600, #ff3300); border-radius: 5px 0 0 5px"></div>
+        <div class="h2h-bar-fill" style="width: 49.8%; background: linear-gradient(90deg, #ff6600, #ff4d00); border-radius: 0 5px 5px 0"></div>
+      </div>
+      <div class="h2h-metric">Points Share</div>
+    </div>
+    <div class="h2h-bar-container">
+      <div class="h2h-labels">
+        <span style="color: #e10600">5 Wins</span>
+        <span style="color: #ff4d00">4 Wins</span>
+      </div>
+      <div class="h2h-bar">
+        <div class="h2h-bar-fill" style="width: 55.5%; background: linear-gradient(90deg, #e10600, #ff3300); border-radius: 5px 0 0 5px"></div>
+        <div class="h2h-bar-fill" style="width: 44.5%; background: linear-gradient(90deg, #ff6600, #ff4d00); border-radius: 0 5px 5px 0"></div>
+      </div>
+      <div class="h2h-metric">Race Weekend Wins</div>
+    </div>
+    <div class="h2h-bar-container">
+      <div class="h2h-labels">
+        <span style="color: #e10600">Best: 139 pts</span>
+        <span style="color: #ff4d00">Best: 120 pts</span>
+      </div>
+      <div class="h2h-bar">
+        <div class="h2h-bar-fill" style="width: 54%; background: linear-gradient(90deg, #e10600, #ff3300); border-radius: 5px 0 0 5px"></div>
+        <div class="h2h-bar-fill" style="width: 46%; background: linear-gradient(90deg, #ff6600, #ff4d00); border-radius: 0 5px 5px 0"></div>
+      </div>
+      <div class="h2h-metric">Best Single Race Weekend</div>
+    </div>
+  </div>
+
+  <!-- ===== RECENT RACES ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="icon">🏁</span>
+      Recent Races
+    </div>
+
+    <div class="race-weekend">
+      <div class="race-header">
+        <div class="race-flag">🇭🇺</div>
+        <div class="race-info">
+          <div class="race-title">Hungarian Grand Prix</div>
+          <div class="race-meta">
+            <span class="race-date-badge">Jul 26, 2026</span>
+            <span class="race-round-badge">Round 11</span>
+            <span>· H1 · Hungaroring</span>
+          </div>
+        </div>
+        <div class="race-total-points">
+          <div class="race-total-label">Total Points</div>
+          <div class="race-total-value">+346.0</div>
+        </div>
+      </div>
+
+      <div class="sessions-row">
+        <div class="session-tile" style="--session-color: var(--red)">
+          <div class="session-tile-header">
+            <div><span class="session-badge badge-race">Race</span><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;margin-top:.25rem">Race</div></div>
+            <div class="session-tile-points">+291.0</div>
+          </div>
+          <div class="session-results">
+            <div class="result-row"><span class="pos">P1</span><span class="name">Lando NORRIS <span class="owner">(Rohit)</span></span><span class="pts">+50</span></div>
+            <div class="result-row"><span class="pos">P2</span><span class="name">Max VERSTAPPEN <span class="owner">(Anup)</span></span><span class="pts">+40</span></div>
+            <div class="result-row"><span class="pos">P3</span><span class="name">Kimi ANTONELLI <span class="owner">(Rohit)</span></span><span class="pts">+35</span></div>
+            <div class="result-row"><span class="pos">P4</span><span class="name">Lewis HAMILTON <span class="owner">(Anup)</span></span><span class="pts">+30</span></div>
+            <div class="result-row"><span class="pos">P5</span><span class="name">Oscar PIASTRI <span class="owner">(Abhinav)</span></span><span class="pts">+25</span></div>
+          </div>
+          <div class="race-player-summary">
+            <span class="player-pts-chip"><span class="dot" style="background:#e10600"></span>Anup: +91</span>
+            <span class="player-pts-chip"><span class="dot" style="background:#3b82f6"></span>Rohit: +80</span>
+            <span class="player-pts-chip"><span class="dot" style="background:#10b981"></span>Abhinav: +73</span>
+            <span class="player-pts-chip"><span class="dot" style="background:#f59e0b"></span>Prateik: +55</span>
+          </div>
+        </div>
+
+        <div class="session-tile" style="--session-color: var(--blue)">
+          <div class="session-tile-header">
+            <div><span class="session-badge badge-quali">Qualifying</span><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;margin-top:.25rem">Qualifying</div></div>
+            <div class="session-tile-points" style="color: var(--blue)">+55.0</div>
+          </div>
+          <div class="session-results">
+            <div class="result-row"><span class="pos">P1</span><span class="name">Lando NORRIS <span class="owner">(Rohit)</span></span><span class="pts">+10</span></div>
+            <div class="result-row"><span class="pos">P2</span><span class="name">Charles LECLERC <span class="owner">(Abhinav)</span></span><span class="pts">+9</span></div>
+            <div class="result-row"><span class="pos">P3</span><span class="name">Max VERSTAPPEN <span class="owner">(Anup)</span></span><span class="pts">+8</span></div>
+            <div class="result-row"><span class="pos">P4</span><span class="name">George RUSSELL <span class="owner">(Prateik)</span></span><span class="pts">+7</span></div>
+            <div class="result-row"><span class="pos">P5</span><span class="name">Oscar PIASTRI <span class="owner">(Abhinav)</span></span><span class="pts">+6</span></div>
+          </div>
+          <div class="race-player-summary">
+            <span class="player-pts-chip"><span class="dot" style="background:#3b82f6"></span>Rohit: +18</span>
+            <span class="player-pts-chip"><span class="dot" style="background:#e10600"></span>Anup: +17</span>
+            <span class="player-pts-chip"><span class="dot" style="background:#10b981"></span>Abhinav: +10</span>
+            <span class="player-pts-chip"><span class="dot" style="background:#f59e0b"></span>Prateik: +10</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== UPCOMING RACES ===== -->
+  <div class="section">
+    <div class="section-title">
+      <span class="icon" style="background: var(--gold)">📅</span>
+      Upcoming Races
+    </div>
+
+    <div class="upcoming-race-card">
+      <div class="upcoming-race-header">
+        <div class="upcoming-race-flag">🇳🇱</div>
+        <div class="upcoming-race-info">
+          <div class="upcoming-race-name">Dutch Grand Prix</div>
+          <div class="upcoming-race-meta">
+            <span class="race-date-badge" style="background: var(--gold)">Sat, Aug 22, 2026</span>
+            <span class="race-round-badge">Round 14</span>
+            <span>· H2 · Circuit Zandvoort</span>
+          </div>
+        </div>
+        <!-- NEW: Countdown timer -->
+        <div class="countdown" id="countdown1">
+          <div class="countdown-unit">
+            <div class="countdown-value">23</div>
+            <div class="countdown-label">Days</div>
+          </div>
+          <div class="countdown-unit">
+            <div class="countdown-value">14</div>
+            <div class="countdown-label">Hours</div>
+          </div>
+          <div class="countdown-unit">
+            <div class="countdown-value">32</div>
+            <div class="countdown-label">Min</div>
+          </div>
+        </div>
+      </div>
+      <div class="upcoming-sessions">
+        <div class="upcoming-session-item">
+          <div class="upcoming-session-name">Practice 1</div>
+          <div class="upcoming-session-time">Fri, Aug 21, 6:30 AM</div>
+        </div>
+        <div class="upcoming-session-item">
+          <div class="upcoming-session-name">Practice 2</div>
+          <div class="upcoming-session-time">Fri, Aug 21, 10:00 AM</div>
+        </div>
+        <div class="upcoming-session-item">
+          <div class="upcoming-session-name">Practice 3</div>
+          <div class="upcoming-session-time">Sat, Aug 22, 5:30 AM</div>
+        </div>
+        <div class="upcoming-session-item">
+          <div class="upcoming-session-name">Qualifying</div>
+          <div class="upcoming-session-time">Sat, Aug 22, 8:00 AM</div>
+        </div>
+        <div class="upcoming-session-item" style="border: 1px solid var(--red); background: var(--red-light)">
+          <div class="upcoming-session-name" style="color: var(--red)">Race</div>
+          <div class="upcoming-session-time">Sun, Aug 23, 7:00 AM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="upcoming-race-card">
+      <div class="upcoming-race-header">
+        <div class="upcoming-race-flag">🇮🇹</div>
+        <div class="upcoming-race-info">
+          <div class="upcoming-race-name">Italian Grand Prix</div>
+          <div class="upcoming-race-meta">
+            <span class="race-date-badge" style="background: var(--gold)">Sat, Sep 5, 2026</span>
+            <span class="race-round-badge">Round 16</span>
+            <span>· H2 · Autodromo Nazionale Monza</span>
+          </div>
+        </div>
+        <div class="countdown">
+          <div class="countdown-unit">
+            <div class="countdown-value">37</div>
+            <div class="countdown-label">Days</div>
+          </div>
+          <div class="countdown-unit">
+            <div class="countdown-value">08</div>
+            <div class="countdown-label">Hours</div>
+          </div>
+          <div class="countdown-unit">
+            <div class="countdown-value">15</div>
+            <div class="countdown-label">Min</div>
+          </div>
+        </div>
+      </div>
+      <div class="upcoming-sessions">
+        <div class="upcoming-session-item">
+          <div class="upcoming-session-name">Practice 1</div>
+          <div class="upcoming-session-time">Fri, Sep 4, 6:30 AM</div>
+        </div>
+        <div class="upcoming-session-item">
+          <div class="upcoming-session-name">Practice 2</div>
+          <div class="upcoming-session-time">Fri, Sep 4, 10:00 AM</div>
+        </div>
+        <div class="upcoming-session-item">
+          <div class="upcoming-session-name">Practice 3</div>
+          <div class="upcoming-session-time">Sat, Sep 5, 5:30 AM</div>
+        </div>
+        <div class="upcoming-session-item">
+          <div class="upcoming-session-name">Qualifying</div>
+          <div class="upcoming-session-time">Sat, Sep 5, 9:00 AM</div>
+        </div>
+        <div class="upcoming-session-item" style="border: 1px solid var(--red); background: var(--red-light)">
+          <div class="upcoming-session-name" style="color: var(--red)">Race</div>
+          <div class="upcoming-session-time">Sun, Sep 6, 7:00 AM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  F1 2026 Fantasy Draft — <a href="/draft">Mid-Season Draft</a> | Powered by OpenF1 API
+</footer>
+
+<script>
+// ===== Score Worm Chart with gradient fills =====
+const ctx = document.getElementById('scoreWorm').getContext('2d');
+
+const labels = ['Rd 1', 'Rd 2', 'Rd 3', 'Rd 4', 'Rd 5', 'Rd 6', 'Rd 7', 'Rd 8', 'Rd 9', 'Rd 10', 'Rd 11'];
+
+function createGradient(ctx, color) {
+  const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+  gradient.addColorStop(0, color + '40');
+  gradient.addColorStop(1, color + '00');
+  return gradient;
+}
+
+const scoreWorm = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Prateik',
+        data: [65, 180, 290, 420, 520, 640, 730, 850, 989, 1027, 1108],
+        borderColor: '#f59e0b',
+        backgroundColor: createGradient(ctx, '#f59e0b'),
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        fill: false,
+        tension: 0.3,
+      },
+      {
+        label: 'Anup',
+        data: [50, 160, 280, 390, 500, 600, 710, 830, 933, 1002, 1099],
+        borderColor: '#e10600',
+        backgroundColor: createGradient(ctx, '#e10600'),
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        fill: false,
+        tension: 0.3,
+      },
+      {
+        label: 'Rohit',
+        data: [40, 140, 250, 350, 450, 530, 640, 760, 831, 952, 1021],
+        borderColor: '#3b82f6',
+        backgroundColor: createGradient(ctx, '#3b82f6'),
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        fill: false,
+        tension: 0.3,
+      },
+      {
+        label: 'Abhinav',
+        data: [30, 100, 190, 290, 370, 460, 560, 650, 741, 775, 844],
+        borderColor: '#10b981',
+        backgroundColor: createGradient(ctx, '#10b981'),
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        fill: false,
+        tension: 0.3,
+      },
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: '#8b949e',
+          font: { family: "'Barlow Condensed', sans-serif", weight: '700', size: 12 },
+          usePointStyle: true,
+          pointStyle: 'circle',
+          padding: 20,
+        }
+      },
+      tooltip: {
+        backgroundColor: '#141921',
+        titleColor: '#e6edf3',
+        bodyColor: '#e6edf3',
+        borderColor: '#252d3a',
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 12,
+        titleFont: { family: "'Barlow Condensed', sans-serif", weight: '700', size: 14 },
+        bodyFont: { family: "'Barlow', sans-serif", size: 13 },
+        displayColors: true,
+        boxPadding: 4,
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(225,6,0,.06)', lineWidth: 1 },
+        ticks: { color: '#8b949e', font: { family: "'Barlow Condensed', sans-serif", size: 11 } }
+      },
+      y: {
+        grid: { color: 'rgba(225,6,0,.06)', lineWidth: 1 },
+        ticks: { color: '#8b949e', font: { family: "'Barlow Condensed', sans-serif", size: 11 } }
+      }
+    },
+    animation: {
+      duration: 1500,
+      easing: 'easeOutQuart',
+    }
+  }
+});
+
+// ===== Mini Sparkline Charts =====
+function createSparkline(canvasId, data, color) {
+  const canvas = document.getElementById(canvasId);
+  canvas.width = canvas.parentElement.offsetWidth;
+  canvas.height = 45;
+  const sparkCtx = canvas.getContext('2d');
+  const gradient = sparkCtx.createLinearGradient(0, 0, 0, 45);
+  gradient.addColorStop(0, color + '30');
+  gradient.addColorStop(1, color + '00');
+
+  new Chart(sparkCtx, {
+    type: 'line',
+    data: {
+      labels: data.map((_, i) => i),
+      datasets: [{
+        data,
+        borderColor: color,
+        backgroundColor: gradient,
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      },
+      animation: { duration: 1000, easing: 'easeOutQuart' }
+    }
+  });
+}
+
+createSparkline('spark1', [65, 115, 110, 130, 100, 120, 90, 120, 139, 38, 81], '#f59e0b');
+createSparkline('spark2', [50, 110, 120, 110, 110, 100, 110, 120, 103, 69, 97], '#e10600');
+createSparkline('spark3', [40, 100, 110, 100, 100, 80, 110, 120, 71, 121, 99], '#3b82f6');
+createSparkline('spark4', [30, 70, 90, 100, 80, 90, 100, 90, 91, 34, 69], '#10b981');
+
+// ===== Tab Switching =====
+document.querySelectorAll('.half-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.half-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>
