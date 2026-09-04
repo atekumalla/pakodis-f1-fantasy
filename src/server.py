@@ -264,7 +264,8 @@ async def get_status():
                 sub_to_player_by_round.setdefault(rnd, {})[si["substitute_driver"]] = owner
 
     recent_sessions = []
-    for s in finished[:20]:
+    # Keep all finished/live sessions so UI pagination can reach early rounds too.
+    for s in finished:
         pts_map = calculator.calculate_session_points(s)
         # Per-player points for this session
         player_pts = {}
