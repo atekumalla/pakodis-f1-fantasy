@@ -224,45 +224,45 @@ CALENDAR_2026: list[dict] = [
 ]
 
 
-# Pre-seeded session times (PST) for upcoming races - will be overwritten by API when available
-# Format: race name -> list of sessions with times
+# Pre-seeded session times (PT) for upcoming races - will be overwritten by API when available
+# Format: race name -> list of sessions with times (in local PT / America/Los_Angeles)
 PRESEEDED_SESSION_TIMES = {
     "British Grand Prix": {
         "date": "2026-07-05",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "05:30"},       # Friday
-            {"name": "Sprint Shootout", "day_offset": -2, "time": "09:00"},  # Friday
-            {"name": "Sprint", "day_offset": -1, "time": "05:30"},           # Saturday
-            {"name": "Qualifying", "day_offset": -1, "time": "09:00"},       # Saturday
+            {"name": "Practice 1", "day_offset": -2, "time": "04:30"},       # Friday
+            {"name": "Sprint Qualifying", "day_offset": -2, "time": "08:30"},# Friday
+            {"name": "Sprint", "day_offset": -1, "time": "04:00"},           # Saturday
+            {"name": "Qualifying", "day_offset": -1, "time": "08:00"},       # Saturday
             {"name": "Race", "day_offset": 0, "time": "07:00"},              # Sunday (race day)
         ]
     },
     "Belgian Grand Prix": {
         "date": "2026-07-19",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "05:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "09:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "04:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "08:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "04:30"},
+            {"name": "Practice 2", "day_offset": -2, "time": "08:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "03:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "07:00"},
             {"name": "Race", "day_offset": 0, "time": "06:00"},
         ]
     },
     "Hungarian Grand Prix": {
         "date": "2026-07-26",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "05:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "09:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "04:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "08:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "04:30"},
+            {"name": "Practice 2", "day_offset": -2, "time": "08:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "03:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "07:00"},
             {"name": "Race", "day_offset": 0, "time": "06:00"},
         ]
     },
     "Dutch Grand Prix": {
         "date": "2026-08-23",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "04:30"},       # Friday
-            {"name": "Sprint Shootout", "day_offset": -2, "time": "08:00"},  # Friday
-            {"name": "Sprint", "day_offset": -1, "time": "03:30"},           # Saturday
+            {"name": "Practice 1", "day_offset": -2, "time": "03:30"},       # Friday
+            {"name": "Sprint Qualifying", "day_offset": -2, "time": "07:30"},# Friday
+            {"name": "Sprint", "day_offset": -1, "time": "03:00"},           # Saturday
             {"name": "Qualifying", "day_offset": -1, "time": "07:00"},       # Saturday
             {"name": "Race", "day_offset": 0, "time": "06:00"},              # Sunday
         ]
@@ -270,30 +270,30 @@ PRESEEDED_SESSION_TIMES = {
     "Italian Grand Prix": {
         "date": "2026-09-06",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "05:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "09:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "04:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "08:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "03:30"},
+            {"name": "Practice 2", "day_offset": -2, "time": "07:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "03:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "07:00"},
             {"name": "Race", "day_offset": 0, "time": "06:00"},
         ]
     },
     "Spanish Grand Prix": {
         "date": "2026-09-13",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "05:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "09:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "04:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "08:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "04:30"},
+            {"name": "Practice 2", "day_offset": -2, "time": "08:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "03:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "07:00"},
             {"name": "Race", "day_offset": 0, "time": "06:00"},
         ]
     },
     "Azerbaijan Grand Prix": {
         "date": "2026-09-26",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "04:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "08:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "04:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "08:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "01:30"},
+            {"name": "Practice 2", "day_offset": -2, "time": "05:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "01:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "05:00"},
             {"name": "Race", "day_offset": 0, "time": "04:00"},
         ]
     },
@@ -301,9 +301,9 @@ PRESEEDED_SESSION_TIMES = {
         "date": "2026-10-11",
         "sessions": [
             {"name": "Practice 1", "day_offset": -2, "time": "01:30"},       # Friday
-            {"name": "Sprint Shootout", "day_offset": -2, "time": "05:00"},  # Friday
-            {"name": "Sprint", "day_offset": -1, "time": "01:30"},           # Saturday
-            {"name": "Qualifying", "day_offset": -1, "time": "05:00"},       # Saturday
+            {"name": "Sprint Qualifying", "day_offset": -2, "time": "05:30"},# Friday
+            {"name": "Sprint", "day_offset": -1, "time": "02:00"},           # Saturday
+            {"name": "Qualifying", "day_offset": -1, "time": "06:00"},       # Saturday
             {"name": "Race", "day_offset": 0, "time": "05:00"},              # Sunday
         ]
     },
@@ -320,31 +320,31 @@ PRESEEDED_SESSION_TIMES = {
     "Mexico City Grand Prix": {
         "date": "2026-11-01",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "10:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "14:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "09:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "13:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "11:30"},
+            {"name": "Practice 2", "day_offset": -2, "time": "15:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "10:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "14:00"},
             {"name": "Race", "day_offset": 0, "time": "12:00"},
         ]
     },
     "São Paulo Grand Prix": {
         "date": "2026-11-08",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "05:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "09:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "05:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "09:00"},
+            {"name": "Practice 1", "day_offset": -2, "time": "07:30"},
+            {"name": "Practice 2", "day_offset": -2, "time": "11:00"},
+            {"name": "Practice 3", "day_offset": -1, "time": "06:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "10:00"},
             {"name": "Race", "day_offset": 0, "time": "09:00"},
         ]
     },
     "Las Vegas Grand Prix": {
         "date": "2026-11-21",
         "sessions": [
-            {"name": "Practice 1", "day_offset": -2, "time": "17:30"},
-            {"name": "Practice 2", "day_offset": -2, "time": "21:00"},
-            {"name": "Practice 3", "day_offset": -1, "time": "17:30"},
-            {"name": "Qualifying", "day_offset": -1, "time": "21:00"},
-            {"name": "Race", "day_offset": 0, "time": "20:00"},
+            {"name": "Practice 1", "day_offset": -1, "time": "16:30"},
+            {"name": "Practice 2", "day_offset": -1, "time": "20:00"},
+            {"name": "Practice 3", "day_offset": 0, "time": "16:30"},
+            {"name": "Qualifying", "day_offset": 0, "time": "20:00"},
+            {"name": "Race", "day_offset": 1, "time": "20:00"},
         ]
     },
     "Qatar Grand Prix": {

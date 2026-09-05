@@ -177,6 +177,12 @@ async def lifespan(app: FastAPI):
 
     _app_state.update(state)
 
+    # Initial refresh of upcoming session times so calendar is always up to date
+    try:
+        _refresh_session_times(_app_state)
+    except Exception as e:
+        logger.debug(f"Initial session times refresh skipped or failed: {e}")
+
     if has_sheets:
         state["scheduler"].start()
         state["scheduler"].trigger_now()
@@ -671,8 +677,11 @@ async def get_calendar():
     from src.seed_data import CALENDAR_2026, RACE_COUNTRY_FLAGS, PRESEEDED_SESSION_TIMES
     from src.substitutions import get_all_substitution_info
     from datetime import datetime, date as dt_date, timedelta
-    
+    from zoneinfo import ZoneInfo
+    from datetime import timezone
+
     today = dt_date.today()
+    pt_tz = ZoneInfo("America/Los_Angeles")
     
     # Use cached session times (loaded from sheets on startup, refreshed during sync)
     cached_times: dict[str, list[dict]] = _app_state.get("session_times", {})
@@ -708,10 +717,8 @@ async def get_calendar():
                     hour = int(time_parts[0])
                     minute = int(time_parts[1]) if len(time_parts) > 1 else 0
                     
-                    session_datetime = datetime(session_date.year, session_date.month, session_date.day, hour, minute)
-                    from datetime import timezone
-                    pst_offset = timedelta(hours=-8)
-                    session_datetime_utc = session_datetime.replace(tzinfo=timezone(pst_offset)).astimezone(timezone.utc)
+                    session_datetime = datetime(session_date.year, session_date.month, session_date.day, hour, minute, tzinfo=pt_tz)
+                    session_datetime_utc = session_datetime.astimezone(timezone.utc)
                     
                     sessions_info.append({
                         "name": session["name"],
@@ -1220,7 +1227,7 @@ def _refresh_session_times(state: dict):
 
     openf1 = state.get("openf1_api")
     sheets_client = state.get("sheets_client")
-    if not openf1 or not sheets_client:
+    if not openf1:
         return
 
     today = dt_date.today()
@@ -1230,19 +1237,41 @@ def _refresh_session_times(state: dict):
 
     try:
         all_meetings = openf1.fetch_season_meetings()
-        meetings_by_name = {m.get("meeting_official_name"): m for m in all_meetings}
     except Exception as e:
         logger.debug(f"Could not fetch meetings for session times: {e}")
         return
 
+    def _find_meeting(cal_entry: dict, meetings: list[dict]) -> dict | None:
+        r_name = cal_entry["name"]
+        r_date = dt_date.fromisoformat(cal_entry["date"])
+        # 1. Exact meeting_name match
+        named = [m for m in meetings if m.get("meeting_name") == r_name]
+        if len(named) == 1:
+            return named[0]
+        elif len(named) > 1:
+            return min(named, key=lambda m: abs((dt_date.fromisoformat(m.get("date_start", "2026-01-01")[:10]) - r_date).days))
+        # 2. Circuit or location match
+        circuit_matches = [
+            m for m in meetings
+            if m.get("circuit_short_name") == cal_entry.get("circuit")
+            or (m.get("location") and m.get("location") in cal_entry.get("circuit", ""))
+        ]
+        if circuit_matches:
+            return min(circuit_matches, key=lambda m: abs((dt_date.fromisoformat(m.get("date_start", "2026-01-01")[:10]) - r_date).days))
+        # 3. Closest meeting by date (within 7 days)
+        close = [m for m in meetings if abs((dt_date.fromisoformat(m.get("date_start", "2026-01-01")[:10]) - r_date).days) <= 7]
+        if close:
+            return close[0]
+        return None
+
     RELEVANT_SESSIONS = {
         "Practice 1", "Practice 2", "Practice 3",
-        "Qualifying", "Sprint", "Sprint Shootout", "Race",
+        "Qualifying", "Sprint", "Sprint Qualifying", "Sprint Shootout", "Race",
     }
 
     times_by_gp: dict[str, list[dict]] = {}
     for r in upcoming:
-        meeting = meetings_by_name.get(r["name"])
+        meeting = _find_meeting(r, all_meetings)
         if not meeting:
             continue
         try:
@@ -1273,12 +1302,13 @@ def _refresh_session_times(state: dict):
             logger.debug(f"Could not fetch sessions for {r['name']}: {e}")
 
     if times_by_gp:
-        try:
-            write_session_times(sheets_client, times_by_gp)
-            state["session_times"] = times_by_gp
-            logger.info(f"Refreshed session times for {len(times_by_gp)} upcoming GPs")
-        except Exception as e:
-            logger.warning(f"Failed to write session times to sheet: {e}")
+        state["session_times"] = times_by_gp
+        if sheets_client:
+            try:
+                write_session_times(sheets_client, times_by_gp)
+                logger.info(f"Refreshed session times for {len(times_by_gp)} upcoming GPs")
+            except Exception as e:
+                logger.warning(f"Failed to write session times to sheet: {e}")
 
 
 def _do_force_sync(state: dict):
