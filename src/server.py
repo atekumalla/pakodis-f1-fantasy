@@ -438,10 +438,22 @@ async def reload_from_sheets(x_admin_token: str | None = Header(default=None)):
         raise HTTPException(503, "No Google Sheets client available")
     try:
         from src.sheets.results import read_results
+        from src.sheets.substitutions import read_substitutions
         sessions = read_results(sheets_client)
+        substitutions = read_substitutions(sheets_client)
         _app_state["sessions"] = sessions
-        logger.info(f"Reloaded {len(sessions)} sessions from sheets")
-        return {"status": "ok", "message": f"Reloaded {len(sessions)} sessions from sheets"}
+        _app_state["substitutions"] = substitutions
+        logger.info(
+            f"Reloaded {len(sessions)} sessions and {len(substitutions)} "
+            "substitutions from sheets"
+        )
+        return {
+            "status": "ok",
+            "message": (
+                f"Reloaded {len(sessions)} sessions and "
+                f"{len(substitutions)} substitutions from sheets"
+            ),
+        }
     except Exception as e:
         logger.error(f"Reload from sheets failed: {e}", exc_info=True)
         raise HTTPException(500, f"Reload failed: {str(e)}")
