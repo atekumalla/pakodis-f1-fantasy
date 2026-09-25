@@ -308,9 +308,10 @@ class OpenF1API:
                 results = []
                 if status == SessionStatus.FINISHED:
                     try:
-                        # Ensure driver cache is populated
-                        if not self._driver_cache:
-                            self.fetch_drivers(session_key)
+                        # Refresh driver cache every session — a driver missing from
+                        # an earlier weekend (e.g. mid-season replacement) would
+                        # otherwise never get added, and fall back to "Driver #N".
+                        self.fetch_drivers(session_key)
                         results = self.get_session_results(session_key)
                         if not results:
                             logger.info(
@@ -456,8 +457,10 @@ class OpenF1API:
                 # Fetch results
                 results = []
                 try:
-                    if not self._driver_cache:
-                        self.fetch_drivers(session_key)
+                    # Refresh driver cache every session — a driver missing from
+                    # an earlier weekend (e.g. mid-season replacement) would
+                    # otherwise never get added, and fall back to "Driver #N".
+                    self.fetch_drivers(session_key)
                     results = self.get_session_results(session_key)
                 except Exception as e:
                     logger.warning(f"Failed to fetch results for {gp_name} {session_name}: {e}")
