@@ -108,8 +108,11 @@ tbody tr:hover{background:var(--surface2)}
 .sessions-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
 .session-tile{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;padding:1rem;border-left:3px solid var(--session-color,var(--red))}
 .session-tile-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+.session-tile-header-right{display:flex;align-items:center;gap:.5rem}
 .session-tile-name{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700}
 .session-tile-points{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;color:var(--session-color,var(--red))}
+.session-share-btn{width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:.85rem;line-height:1;cursor:pointer;color:var(--muted);transition:all .15s}
+.session-share-btn:hover{background:var(--session-color,var(--red));color:#fff;border-color:var(--session-color,var(--red))}
 .session-results{display:flex;flex-direction:column;gap:4px}
 .session-player-points{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--divider);font-size:.75rem}
 .pagination{display:flex;align-items:center;justify-content:center;gap:1rem;margin-top:1.5rem}
@@ -647,6 +650,7 @@ const UPCOMING_PER_PAGE = 5;  // Number of upcoming races per page
 let driverResultsPage = 1;  // Current page for driver results
 const DRIVER_RESULTS_PER_PAGE = 10;  // Number of race results per page
 let driverResultsData = [];  // Store driver results for pagination
+const SESSION_LOOKUP = {};  // `${round}-${session_type}` -> session object, for share buttons
 
 async function load() {
   try {
@@ -1180,13 +1184,18 @@ function renderRecent() {
 
       const sessionId = `session-${s.round}-${s.session_type}`;
       
+      SESSION_LOOKUP[`${s.round}-${s.session_type}`] = s;
+
       return `<div class="session-tile" style="--session-color:${sessionColor}">
         <div class="session-tile-header">
           <div>
             <span class="session-badge ${badgeClass}">${s.session_name}</span>
             <div class="session-tile-name">${s.session_type.charAt(0).toUpperCase() + s.session_type.slice(1)}</div>
           </div>
-          <div class="session-tile-points">+${sessionTotal.toFixed(1)}</div>
+          <div class="session-tile-header-right">
+            <button class="session-share-btn" title="Share this session" onclick="shareSessionResults('${s.round}', '${s.session_type}')">📤</button>
+            <div class="session-tile-points">+${sessionTotal.toFixed(1)}</div>
+          </div>
         </div>
         <div class="session-results" id="${sessionId}-results">
           ${topResults.map(r => `<div class="result-row">
@@ -1539,6 +1548,53 @@ document.getElementById('btnShare').addEventListener('click', async () => {
     showToast('📋 Copied to clipboard!');
   } catch(e) { showToast('❌ Failed to copy'); }
 });
+
+function formatDriverName(name) {
+  return (name || '').split(' ').map(w => w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w).join(' ');
+}
+
+function buildSessionShareText(s) {
+  const emoji = s.session_type === 'race' ? '🏁' : (s.session_type === 'sprint' ? '⚡' : '⏱️');
+  const results = (s.results || []).filter(r => r.points > 0);
+
+  const lines = [
+    `🏎️${emoji} *F1 2026 Fantasy Draft* ${emoji}🏎️`,
+    `${s.country_flag || '🏁'} *${s.grand_prix}* — ${s.session_name} (Round ${s.round})`,
+    '',
+  ];
+
+  results.forEach((r, i) => {
+    const rank = i < 3 ? ['🥇','🥈','🥉'][i] : `${i+1}.`;
+    const ownerTag = r.owner ? ` (${r.owner}${r.substitute_for ? ' 🔄' : ''})` : '';
+    lines.push(`${rank} P${r.position} ${formatDriverName(r.driver)}${ownerTag} +${r.points}`);
+  });
+
+  const playerEntries = Object.entries(s.player_points || {}).sort((a, b) => b[1] - a[1]);
+  if (playerEntries.length) {
+    lines.push('');
+    lines.push('💰 Points added this session:');
+    playerEntries.forEach(([name, pts], i) => {
+      const rank = i < 3 ? ['🥇','🥈','🥉'][i] : `${i+1}.`;
+      lines.push(`${rank} ${name}: +${pts}`);
+    });
+  }
+
+  if (DATA && DATA.dashboard_url) {
+    lines.push('');
+    lines.push(`🔗 Live standings: ${DATA.dashboard_url}`);
+  }
+
+  return lines.join('\n');
+}
+
+async function shareSessionResults(round, sessionType) {
+  const s = SESSION_LOOKUP[`${round}-${sessionType}`];
+  if (!s) { showToast('❌ Session data not found'); return; }
+  try {
+    await navigator.clipboard.writeText(buildSessionShareText(s));
+    showToast('📋 Copied to clipboard!');
+  } catch (e) { showToast('❌ Failed to copy'); }
+}
 
 // Rules Modal
 document.getElementById('btnRules').addEventListener('click', () => {

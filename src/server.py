@@ -388,6 +388,7 @@ async def get_status():
             f"https://docs.google.com/spreadsheets/d/{Config.GOOGLE_SHEETS_ID}"
             if Config.GOOGLE_SHEETS_ID else None
         ),
+        "dashboard_url": Config.DASHBOARD_URL,
     }
 
 
