@@ -199,8 +199,8 @@ CALENDAR_2026: list[dict] = [
     {"round": 1,  "name": "Australian Grand Prix",      "circuit": "Albert Park",                    "country": "Australia",       "date": "2026-03-15", "sprint": False},
     {"round": 2,  "name": "Chinese Grand Prix",         "circuit": "Shanghai International Circuit", "country": "China",           "date": "2026-03-29", "sprint": True},
     {"round": 3,  "name": "Japanese Grand Prix",        "circuit": "Suzuka International Racing Course", "country": "Japan",       "date": "2026-04-05", "sprint": False},
-    {"round": 4,  "name": "Bahrain Grand Prix",         "circuit": "Bahrain International Circuit",  "country": "Bahrain",         "date": "2026-04-19", "sprint": False},
-    {"round": 5,  "name": "Saudi Arabian Grand Prix",   "circuit": "Jeddah Corniche Circuit",        "country": "Saudi Arabia",    "date": "2026-04-26", "sprint": False},
+    {"round": 4,  "name": "Bahrain Grand Prix",         "circuit": "Bahrain International Circuit",  "country": "Bahrain",         "date": "2026-04-19", "sprint": False, "cancelled": True},
+    {"round": 5,  "name": "Saudi Arabian Grand Prix",   "circuit": "Jeddah Corniche Circuit",        "country": "Saudi Arabia",    "date": "2026-04-26", "sprint": False, "cancelled": True},
     {"round": 6,  "name": "Miami Grand Prix",           "circuit": "Miami International Autodrome",  "country": "United States",   "date": "2026-05-03", "sprint": True},
     {"round": 7,  "name": "Emilia Romagna Grand Prix",  "circuit": "Autodromo Enzo e Dino Ferrari",  "country": "Italy",           "date": "2026-05-17", "sprint": False},
     {"round": 8,  "name": "Monaco Grand Prix",          "circuit": "Circuit de Monaco",              "country": "Monaco",          "date": "2026-05-24", "sprint": False},
@@ -214,13 +214,17 @@ CALENDAR_2026: list[dict] = [
     {"round": 16, "name": "Italian Grand Prix",         "circuit": "Autodromo Nazionale Monza",      "country": "Italy",           "date": "2026-09-06", "sprint": False},
     {"round": 17, "name": "Spanish Grand Prix",         "circuit": "Madrid Street Circuit",          "country": "Spain",           "date": "2026-09-13", "sprint": False},
     {"round": 18, "name": "Azerbaijan Grand Prix",      "circuit": "Baku City Circuit",              "country": "Azerbaijan",      "date": "2026-09-26", "sprint": False},
-    {"round": 19, "name": "Singapore Grand Prix",       "circuit": "Marina Bay Street Circuit",      "country": "Singapore",       "date": "2026-10-11", "sprint": True},
-    {"round": 20, "name": "United States Grand Prix",   "circuit": "Circuit of the Americas",        "country": "United States",   "date": "2026-10-25", "sprint": False},
-    {"round": 21, "name": "Mexico City Grand Prix",     "circuit": "Autodromo Hermanos Rodriguez",   "country": "Mexico",          "date": "2026-11-01", "sprint": False},
-    {"round": 22, "name": "São Paulo Grand Prix",       "circuit": "Autodromo Jose Carlos Pace",     "country": "Brazil",          "date": "2026-11-08", "sprint": False},
-    {"round": 23, "name": "Las Vegas Grand Prix",       "circuit": "Las Vegas Strip Circuit",        "country": "United States",   "date": "2026-11-21", "sprint": False},
-    {"round": 24, "name": "Qatar Grand Prix",           "circuit": "Lusail International Circuit",   "country": "Qatar",           "date": "2026-11-29", "sprint": False},
-    {"round": 25, "name": "Abu Dhabi Grand Prix",       "circuit": "Yas Marina Circuit",             "country": "United Arab Emirates", "date": "2026-12-06", "sprint": False},
+    # Bahrain GP relocated: Sakhir race (round 4) was canceled, so the Bahrain GP contract
+    # is being fulfilled at this Kuala Lumpur date instead. Per OpenF1 (meeting_key 1308)
+    # the title/country stay "Bahrain" even though the circuit is in Malaysia.
+    {"round": 19, "name": "Bahrain Grand Prix",         "circuit": "Sepang International Circuit",   "country": "Bahrain",         "date": "2026-10-04", "sprint": False},
+    {"round": 20, "name": "Singapore Grand Prix",       "circuit": "Marina Bay Street Circuit",      "country": "Singapore",       "date": "2026-10-11", "sprint": True},
+    {"round": 21, "name": "United States Grand Prix",   "circuit": "Circuit of the Americas",        "country": "United States",   "date": "2026-10-25", "sprint": False},
+    {"round": 22, "name": "Mexico City Grand Prix",     "circuit": "Autodromo Hermanos Rodriguez",   "country": "Mexico",          "date": "2026-11-01", "sprint": False},
+    {"round": 23, "name": "São Paulo Grand Prix",       "circuit": "Autodromo Jose Carlos Pace",     "country": "Brazil",          "date": "2026-11-08", "sprint": False},
+    {"round": 24, "name": "Las Vegas Grand Prix",       "circuit": "Las Vegas Strip Circuit",        "country": "United States",   "date": "2026-11-21", "sprint": False},
+    {"round": 25, "name": "Qatar Grand Prix",           "circuit": "Lusail International Circuit",   "country": "Qatar",           "date": "2026-11-29", "sprint": False},
+    {"round": 26, "name": "Abu Dhabi Grand Prix",       "circuit": "Yas Marina Circuit",             "country": "United Arab Emirates", "date": "2026-12-06", "sprint": False},
 ]
 
 
@@ -295,6 +299,17 @@ PRESEEDED_SESSION_TIMES = {
             {"name": "Practice 3", "day_offset": -1, "time": "01:30"},
             {"name": "Qualifying", "day_offset": -1, "time": "05:00"},
             {"name": "Race", "day_offset": 0, "time": "04:00"},
+        ]
+    },
+    # Bahrain GP relocated to Kuala Lumpur (OpenF1 meeting_key 1308); times converted from UTC.
+    "Bahrain Grand Prix": {
+        "date": "2026-10-04",
+        "sessions": [
+            {"name": "Practice 1", "day_offset": -3, "time": "21:30"},
+            {"name": "Practice 2", "day_offset": -2, "time": "01:00"},
+            {"name": "Practice 3", "day_offset": -2, "time": "21:30"},
+            {"name": "Qualifying", "day_offset": -1, "time": "01:00"},
+            {"name": "Race", "day_offset": 0, "time": "00:00"},
         ]
     },
     "Singapore Grand Prix": {
@@ -387,9 +402,9 @@ def get_race_weekends() -> list[RaceWeekend]:
     except Exception as e:
         logger.warning(f"Failed to fetch calendar from API: {e}")
     
-    # Fallback to hardcoded calendar (filter out known canceled races)
+    # Fallback to hardcoded calendar (filter out canceled races)
     logger.info("Using fallback hardcoded calendar")
-    active_races = [r for r in CALENDAR_2026 if r["name"] not in ("Bahrain Grand Prix", "Saudi Arabian Grand Prix")]
+    active_races = [r for r in CALENDAR_2026 if not r.get("cancelled")]
     
     # Renumber rounds after filtering
     return [
