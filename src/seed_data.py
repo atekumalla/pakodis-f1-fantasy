@@ -192,39 +192,40 @@ def get_initial_players() -> list[DraftPlayer]:
 
 
 # ==============================================================================
-# 2026 RACE CALENDAR (24 rounds, British GP = Round 12 = halfway)
+# 2026 RACE CALENDAR — round numbers match the live OpenF1-derived scoring
+# scheme exactly (sequential over non-canceled races, no gaps). Hungarian GP
+# = Round 11 = halfway (HALFWAY_ROUND); Dutch GP = Round 12 = first H2 race.
 # ==============================================================================
 
 CALENDAR_2026: list[dict] = [
-    {"round": 1,  "name": "Australian Grand Prix",      "circuit": "Albert Park",                    "country": "Australia",       "date": "2026-03-15", "sprint": False},
-    {"round": 2,  "name": "Chinese Grand Prix",         "circuit": "Shanghai International Circuit", "country": "China",           "date": "2026-03-29", "sprint": True},
-    {"round": 3,  "name": "Japanese Grand Prix",        "circuit": "Suzuka International Racing Course", "country": "Japan",       "date": "2026-04-05", "sprint": False},
-    {"round": 4,  "name": "Bahrain Grand Prix",         "circuit": "Bahrain International Circuit",  "country": "Bahrain",         "date": "2026-04-19", "sprint": False, "cancelled": True},
-    {"round": 5,  "name": "Saudi Arabian Grand Prix",   "circuit": "Jeddah Corniche Circuit",        "country": "Saudi Arabia",    "date": "2026-04-26", "sprint": False, "cancelled": True},
-    {"round": 6,  "name": "Miami Grand Prix",           "circuit": "Miami International Autodrome",  "country": "United States",   "date": "2026-05-03", "sprint": True},
-    {"round": 7,  "name": "Emilia Romagna Grand Prix",  "circuit": "Autodromo Enzo e Dino Ferrari",  "country": "Italy",           "date": "2026-05-17", "sprint": False},
-    {"round": 8,  "name": "Monaco Grand Prix",          "circuit": "Circuit de Monaco",              "country": "Monaco",          "date": "2026-05-24", "sprint": False},
-    {"round": 9,  "name": "Spanish Grand Prix",         "circuit": "Circuit de Barcelona-Catalunya", "country": "Spain",           "date": "2026-06-07", "sprint": False},
-    {"round": 10, "name": "Canadian Grand Prix",        "circuit": "Circuit Gilles Villeneuve",      "country": "Canada",          "date": "2026-06-14", "sprint": True},
-    {"round": 11, "name": "Austrian Grand Prix",        "circuit": "Red Bull Ring",                  "country": "Austria",         "date": "2026-06-28", "sprint": False},
-    {"round": 12, "name": "British Grand Prix",         "circuit": "Silverstone Circuit",            "country": "United Kingdom",  "date": "2026-07-05", "sprint": True},
-    {"round": 13, "name": "Belgian Grand Prix",         "circuit": "Circuit de Spa-Francorchamps",   "country": "Belgium",         "date": "2026-07-19", "sprint": False},
-    {"round": 14, "name": "Hungarian Grand Prix",       "circuit": "Hungaroring",                    "country": "Hungary",         "date": "2026-07-26", "sprint": False},
-    {"round": 15, "name": "Dutch Grand Prix",           "circuit": "Circuit Zandvoort",              "country": "Netherlands",     "date": "2026-08-23", "sprint": True},
-    {"round": 16, "name": "Italian Grand Prix",         "circuit": "Autodromo Nazionale Monza",      "country": "Italy",           "date": "2026-09-06", "sprint": False},
-    {"round": 17, "name": "Spanish Grand Prix",         "circuit": "Madrid Street Circuit",          "country": "Spain",           "date": "2026-09-13", "sprint": False},
-    {"round": 18, "name": "Azerbaijan Grand Prix",      "circuit": "Baku City Circuit",              "country": "Azerbaijan",      "date": "2026-09-26", "sprint": False},
-    # Bahrain GP relocated: Sakhir race (round 4) was canceled, so the Bahrain GP contract
-    # is being fulfilled at this Kuala Lumpur date instead. Per OpenF1 (meeting_key 1308)
-    # the title/country stay "Bahrain" even though the circuit is in Malaysia.
-    {"round": 19, "name": "Bahrain Grand Prix",         "circuit": "Sepang International Circuit",   "country": "Bahrain",         "date": "2026-10-04", "sprint": False},
-    {"round": 20, "name": "Singapore Grand Prix",       "circuit": "Marina Bay Street Circuit",      "country": "Singapore",       "date": "2026-10-11", "sprint": True},
-    {"round": 21, "name": "United States Grand Prix",   "circuit": "Circuit of the Americas",        "country": "United States",   "date": "2026-10-25", "sprint": False},
-    {"round": 22, "name": "Mexico City Grand Prix",     "circuit": "Autodromo Hermanos Rodriguez",   "country": "Mexico",          "date": "2026-11-01", "sprint": False},
-    {"round": 23, "name": "São Paulo Grand Prix",       "circuit": "Autodromo Jose Carlos Pace",     "country": "Brazil",          "date": "2026-11-08", "sprint": False},
-    {"round": 24, "name": "Las Vegas Grand Prix",       "circuit": "Las Vegas Strip Circuit",        "country": "United States",   "date": "2026-11-21", "sprint": False},
-    {"round": 25, "name": "Qatar Grand Prix",           "circuit": "Lusail International Circuit",   "country": "Qatar",           "date": "2026-11-29", "sprint": False},
-    {"round": 26, "name": "Abu Dhabi Grand Prix",       "circuit": "Yas Marina Circuit",             "country": "United Arab Emirates", "date": "2026-12-06", "sprint": False},
+    {"round": 1,  "name": "Australian Grand Prix",      "circuit": "Albert Park",                    "country": "Australia",       "date": "2026-03-08", "sprint": False},
+    {"round": 2,  "name": "Chinese Grand Prix",         "circuit": "Shanghai International Circuit", "country": "China",           "date": "2026-03-15", "sprint": True},
+    {"round": 3,  "name": "Japanese Grand Prix",        "circuit": "Suzuka International Racing Course", "country": "Japan",       "date": "2026-03-29", "sprint": False},
+    {"round": 0,  "name": "Bahrain Grand Prix",         "circuit": "Bahrain International Circuit",  "country": "Bahrain",         "date": "2026-04-12", "sprint": False, "cancelled": True},
+    {"round": 0,  "name": "Saudi Arabian Grand Prix",   "circuit": "Jeddah Corniche Circuit",        "country": "Saudi Arabia",    "date": "2026-04-19", "sprint": False, "cancelled": True},
+    {"round": 4,  "name": "Miami Grand Prix",           "circuit": "Miami International Autodrome",  "country": "United States",   "date": "2026-05-03", "sprint": True},
+    {"round": 5,  "name": "Canadian Grand Prix",        "circuit": "Circuit Gilles Villeneuve",      "country": "Canada",          "date": "2026-05-24", "sprint": True},
+    {"round": 6,  "name": "Monaco Grand Prix",          "circuit": "Circuit de Monaco",              "country": "Monaco",          "date": "2026-06-07", "sprint": False},
+    {"round": 7,  "name": "Spanish Grand Prix",         "circuit": "Circuit de Barcelona-Catalunya", "country": "Spain",           "date": "2026-06-14", "sprint": False},
+    {"round": 8,  "name": "Austrian Grand Prix",        "circuit": "Red Bull Ring",                  "country": "Austria",         "date": "2026-06-28", "sprint": False},
+    {"round": 9,  "name": "British Grand Prix",         "circuit": "Silverstone Circuit",            "country": "United Kingdom",  "date": "2026-07-05", "sprint": True},
+    {"round": 10, "name": "Belgian Grand Prix",         "circuit": "Circuit de Spa-Francorchamps",   "country": "Belgium",         "date": "2026-07-19", "sprint": False},
+    {"round": 11, "name": "Hungarian Grand Prix",       "circuit": "Hungaroring",                    "country": "Hungary",         "date": "2026-07-26", "sprint": False},
+    {"round": 12, "name": "Dutch Grand Prix",           "circuit": "Circuit Zandvoort",              "country": "Netherlands",     "date": "2026-08-23", "sprint": True},
+    {"round": 13, "name": "Italian Grand Prix",         "circuit": "Autodromo Nazionale Monza",      "country": "Italy",           "date": "2026-09-06", "sprint": False},
+    {"round": 14, "name": "Spanish Grand Prix",         "circuit": "Madrid Street Circuit",          "country": "Spain",           "date": "2026-09-13", "sprint": False},
+    {"round": 15, "name": "Azerbaijan Grand Prix",      "circuit": "Baku City Circuit",              "country": "Azerbaijan",      "date": "2026-09-26", "sprint": False},
+    # Bahrain GP relocated: Sakhir race (canceled above) is fulfilled at this Kuala
+    # Lumpur date instead. Per OpenF1 (meeting_key 1308) the title/country stay
+    # "Bahrain" even though the circuit is in Malaysia.
+    {"round": 16, "name": "Bahrain Grand Prix",         "circuit": "Sepang International Circuit",   "country": "Bahrain",         "date": "2026-10-04", "sprint": False},
+    {"round": 17, "name": "Singapore Grand Prix",       "circuit": "Marina Bay Street Circuit",      "country": "Singapore",       "date": "2026-10-11", "sprint": True},
+    {"round": 18, "name": "United States Grand Prix",   "circuit": "Circuit of the Americas",        "country": "United States",   "date": "2026-10-25", "sprint": False},
+    {"round": 19, "name": "Mexico City Grand Prix",     "circuit": "Autodromo Hermanos Rodriguez",   "country": "Mexico",          "date": "2026-11-01", "sprint": False},
+    {"round": 20, "name": "São Paulo Grand Prix",       "circuit": "Autodromo Jose Carlos Pace",     "country": "Brazil",          "date": "2026-11-08", "sprint": False},
+    {"round": 21, "name": "Las Vegas Grand Prix",       "circuit": "Las Vegas Strip Circuit",        "country": "United States",   "date": "2026-11-22", "sprint": False},
+    {"round": 22, "name": "Qatar Grand Prix",           "circuit": "Lusail International Circuit",   "country": "Qatar",           "date": "2026-11-29", "sprint": False},
+    {"round": 23, "name": "Abu Dhabi Grand Prix",       "circuit": "Yas Marina Circuit",             "country": "United Arab Emirates", "date": "2026-12-06", "sprint": False},
 ]
 
 
