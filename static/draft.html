@@ -101,6 +101,12 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 @media(max-width:900px){.picks-panel{grid-template-columns:repeat(2,1fr)}.driver-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}}
 @media(max-width:600px){.hdr{padding:.6rem .75rem;flex-wrap:wrap;gap:.5rem}.hdr-title{font-size:1.2rem}.hdr-actions{width:100%;justify-content:flex-end;gap:.4rem}.btn{padding:.4rem .7rem;font-size:.75rem}.main{padding:1rem;gap:1rem}.section{padding:1rem}.section-title{font-size:1.15rem}.picks-panel{grid-template-columns:1fr 1fr}.driver-grid{grid-template-columns:1fr 1fr;gap:.4rem}.driver-tile{padding:.5rem}.driver-photo{width:38px;height:38px}.driver-name{font-size:.95rem}.current-picker{font-size:1.6rem}.completed-banner{padding:1.5rem 1rem}.completed-title{font-size:1.6rem}.modal{padding:1.25rem;width:94%}.modal-driver{font-size:1.5rem}.modal-actions{flex-wrap:wrap}}
 .hdr-logo{height:2rem;vertical-align:middle;margin-right:.15rem}
+
+/* ===== POLISH: Accessible focus states ===== */
+:focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:2px}
+
+/* ===== POLISH: Respect reduced-motion preference ===== */
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -189,7 +195,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
 <!-- Player Selection Modal -->
 <div class="modal-overlay" id="playerSelectionModal">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Choose your player">
     <div style="font-size:1.1rem;font-weight:700;margin-bottom:1rem">Who are you?</div>
     <div id="playerSelectionButtons" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-bottom:1rem"></div>
   </div>
@@ -197,7 +203,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
 <!-- Confirm Player Modal -->
 <div class="modal-overlay" id="confirmPlayerModal">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Confirm your identity">
     <div style="font-size:.9rem;color:var(--muted);margin-bottom:.75rem">Playing as</div>
     <div class="modal-driver" id="confirmPlayerName"></div>
     <div style="color:var(--muted);margin-bottom:1.5rem;font-size:.9rem">Correct?</div>
@@ -210,7 +216,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
 <!-- Confirm Modal -->
 <div class="modal-overlay" id="confirmModal">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Confirm driver pick">
     <div style="font-size:.9rem;color:var(--muted)"><span id="modalPicker"></span>'s pick</div>
     <div class="modal-driver" id="modalDriver"></div>
     <div class="modal-team" id="modalTeam"></div>
@@ -503,7 +509,9 @@ function renderDraftBoard() {
     const photoHtml = headshotUrl
       ? `<img class="driver-photo" src="${headshotUrl}" alt="${d.name}" onerror="this.outerHTML='<div class=\\'driver-photo driver-initials\\' style=\\'background:#${teamColor}\\'>${initials}</div>'">`
       : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
-    return `<div class="driver-tile ${isPicked ? 'picked' : (!isMyTurn ? 'not-your-turn' : '')}" style="--team-color:#${teamColor}" data-driver="${d.name}" data-team="${d.team}" data-owner="${isPicked ? pickOwner[d.name] : ''}">
+    const isInteractive = !isPicked && isMyTurn;
+    const tileA11y = isInteractive ? 'role="button" tabindex="0"' : 'aria-disabled="true"';
+    return `<div class="driver-tile ${isPicked ? 'picked' : (!isMyTurn ? 'not-your-turn' : '')}" style="--team-color:#${teamColor}" data-driver="${d.name}" data-team="${d.team}" data-owner="${isPicked ? pickOwner[d.name] : ''}" ${tileA11y}>
       ${photoHtml}
       <div class="driver-info">
         <div class="driver-name-row">
@@ -520,9 +528,13 @@ function renderDraftBoard() {
   }).join('');
 
   grid.querySelectorAll('.driver-tile:not(.picked):not(.not-your-turn)').forEach(tile => {
-    tile.addEventListener('click', () => {
+    const pick = () => {
       pendingPick = { driver: tile.dataset.driver, team: tile.dataset.team };
       showConfirmModal();
+    };
+    tile.addEventListener('click', pick);
+    tile.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
     });
   });
 
@@ -605,6 +617,13 @@ function hideConfirmModal() {
   document.getElementById('confirmModal').classList.remove('show');
   pendingPick = null;
 }
+
+// Escape dismisses the pick-confirmation modal, mirroring its Cancel button
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('confirmModal').classList.contains('show')) {
+    hideConfirmModal();
+  }
+});
 
 // Setup: Randomize
 document.getElementById('btnRandomize').addEventListener('click', async () => {

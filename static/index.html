@@ -291,6 +291,12 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
 /* ===== ENHANCED UI: Responsive adjustments for new elements ===== */
 @media(max-width:900px){.stats-bar{grid-template-columns:repeat(2,1fr)}.h2h-widget{padding:1rem}}
 @media(max-width:600px){.stats-bar{grid-template-columns:1fr 1fr}.stat-card{padding:.85rem}.stat-value{font-size:1.5rem}.countdown-unit{min-width:42px;padding:.4rem .5rem}.countdown-value{font-size:1.2rem}.h2h-labels{font-size:.75rem}.leader-trophy{font-size:3rem}}
+
+/* ===== POLISH: Accessible focus states ===== */
+:focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:2px}
+
+/* ===== POLISH: Respect reduced-motion preference ===== */
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -305,7 +311,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
     <button class="btn btn-sec" id="btnConstructorStandings">🏁 Constructors</button>
     <button class="btn btn-red" id="btnSync" title="Fetch NEW finished results from OpenF1 and add them to the sheet. Use this after a session ends.">↻ Sync</button>
     <button class="btn btn-sec" id="btnForceSync" style="display:none" title="Admin: re-fetch ALL sessions and OVERWRITE the sheet. Only needed if a scored result changed (penalty/DSQ) or the sheet is broken.">⟳ Force</button>
-    <button class="btn btn-sec" id="btnSyncInfo" style="display:none" title="What's the difference between Sync and Force Sync?">ⓘ</button>
+    <button class="btn btn-sec" id="btnSyncInfo" style="display:none" title="What's the difference between Sync and Force Sync?" aria-label="What's the difference between Sync and Force Sync?">ⓘ</button>
     <button class="btn btn-share" id="btnShare">📱 Share</button>
     <a class="btn btn-sec" id="btnSheet" href="#" target="_blank">📊 Sheet</a>
   </div>
@@ -344,7 +350,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
     <div id="h2hContent"></div>
   </div>
   <div class="section">
-    <div class="section-title collapsible" onclick="toggleSection('recentSection')">
+    <div class="section-title collapsible" onclick="toggleSection('recentSection')" role="button" tabindex="0" aria-expanded="true" aria-controls="recentSection">
       <span>🏁 Recent Races</span>
       <span class="chevron">▼</span>
     </div>
@@ -362,7 +368,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
     </div>
   </div>
   <div class="section">
-    <div class="section-title collapsible" onclick="toggleSection('upcomingSection')">
+    <div class="section-title collapsible" onclick="toggleSection('upcomingSection')" role="button" tabindex="0" aria-expanded="true" aria-controls="upcomingSection">
       <span>📅 Upcoming Races</span>
       <span class="chevron">▼</span>
     </div>
@@ -385,10 +391,10 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
 
 <!-- Rules Modal -->
 <div class="modal" id="rulesModal">
-  <div class="modal-content">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="rulesModalTitle">
     <div class="modal-header">
-      <h2 class="modal-title">🏎️ Fantasy F1 Scoring Rules</h2>
-      <button class="modal-close" onclick="closeRulesModal()">×</button>
+      <h2 class="modal-title" id="rulesModalTitle">🏎️ Fantasy F1 Scoring Rules</h2>
+      <button class="modal-close" onclick="closeRulesModal()" aria-label="Close">×</button>
     </div>
     
     <div class="rules-section">
@@ -491,10 +497,10 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
 
 <!-- Sync Info Modal -->
 <div class="modal" id="syncInfoModal">
-  <div class="modal-content">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="syncInfoModalTitle">
     <div class="modal-header">
-      <h2 class="modal-title">🔄 Sync vs Force Sync</h2>
-      <button class="modal-close" onclick="closeSyncInfoModal()">×</button>
+      <h2 class="modal-title" id="syncInfoModalTitle">🔄 Sync vs Force Sync</h2>
+      <button class="modal-close" onclick="closeSyncInfoModal()" aria-label="Close">×</button>
     </div>
 
     <div class="rules-section">
@@ -529,10 +535,10 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
 
 <!-- Driver Standings Modal -->
 <div class="modal" id="driverStandingsModal">
-  <div class="modal-content">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="driverStandingsModalTitle">
     <div class="modal-header">
-      <h2 class="modal-title">🏎️ F1 Driver Championship</h2>
-      <button class="modal-close" onclick="closeDriverStandingsModal()">×</button>
+      <h2 class="modal-title" id="driverStandingsModalTitle">🏎️ F1 Driver Championship</h2>
+      <button class="modal-close" onclick="closeDriverStandingsModal()" aria-label="Close">×</button>
     </div>
     
     <div class="standings-info" id="driverStandingsInfo"></div>
@@ -554,10 +560,10 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
 
 <!-- Constructor Standings Modal -->
 <div class="modal" id="constructorStandingsModal">
-  <div class="modal-content">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="constructorStandingsModalTitle">
     <div class="modal-header">
-      <h2 class="modal-title">🏁 F1 Constructor Championship</h2>
-      <button class="modal-close" onclick="closeConstructorStandingsModal()">×</button>
+      <h2 class="modal-title" id="constructorStandingsModalTitle">🏁 F1 Constructor Championship</h2>
+      <button class="modal-close" onclick="closeConstructorStandingsModal()" aria-label="Close">×</button>
     </div>
     
     <div class="standings-info" id="constructorStandingsInfo"></div>
@@ -578,10 +584,10 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-
 
 <!-- Driver Detail Modal -->
 <div class="modal" id="driverDetailModal">
-  <div class="modal-content" style="max-width:900px">
+  <div class="modal-content" style="max-width:900px" role="dialog" aria-modal="true" aria-labelledby="driverDetailTitle">
     <div class="modal-header">
       <h2 class="modal-title" id="driverDetailTitle">Driver Details</h2>
-      <button class="modal-close" onclick="closeDriverDetailModal()">×</button>
+      <button class="modal-close" onclick="closeDriverDetailModal()" aria-label="Close">×</button>
     </div>
     
     <div class="driver-detail-header" id="driverDetailHeader">
@@ -915,7 +921,7 @@ function renderCards(lb) {
         : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
       const teamLogoUrl = getTeamLogoUrl(d.team);
       const teamLogoHtml = teamLogoUrl ? `<img class="driver-team-logo" src="${teamLogoUrl}" alt="${d.team}" onerror="this.style.display='none'">` : '';
-      return `<div class="driver-row" style="--team-color:#${teamColor};${subStyle}" onclick="openDriverDetailModal(${d.number})" title="${isSub ? 'Substitute driver — click for details' : 'Click for details'}">
+      return `<div class="driver-row" style="--team-color:#${teamColor};${subStyle}" onclick="openDriverDetailModal(${d.number})" role="button" tabindex="0" title="${isSub ? 'Substitute driver — click for details' : 'Click for details'}">
         ${photoHtml}
         <div class="driver-details">
           <div class="driver-name-row">
@@ -951,7 +957,7 @@ function renderCards(lb) {
           : `<div class="driver-photo driver-initials" style="background:#${teamColor}">${initials}</div>`;
         const teamLogoUrl2 = getTeamLogoUrl(d.team);
         const teamLogoHtml2 = teamLogoUrl2 ? `<img class="driver-team-logo" src="${teamLogoUrl2}" alt="${d.team}" onerror="this.style.display='none'">` : '';
-        return `<div class="driver-row" style="--team-color:#${teamColor};opacity:0.7" onclick="openDriverDetailModal(${d.number})" title="Click for details">
+        return `<div class="driver-row" style="--team-color:#${teamColor};opacity:0.7" onclick="openDriverDetailModal(${d.number})" role="button" tabindex="0" title="Click for details">
           ${photoHtml}
           <div class="driver-details">
             <div class="driver-name-row">
@@ -1417,9 +1423,21 @@ function changeUpcomingPage(direction) {
 function toggleSection(id) {
   const body = document.getElementById(id);
   const title = body.previousElementSibling;
-  body.classList.toggle('collapsed');
+  const collapsed = body.classList.toggle('collapsed');
   title.classList.toggle('collapsed');
+  title.setAttribute('aria-expanded', String(!collapsed));
 }
+
+// Keyboard support for custom clickable elements (driver rows, collapsible headers)
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role="button"]')) {
+    e.preventDefault();
+    e.target.click();
+  } else if (e.key === 'Escape') {
+    const openModal = document.querySelector('.modal.show');
+    if (openModal) openModal.classList.remove('show');
+  }
+});
 
 // Half tabs
 document.querySelectorAll('.half-tab').forEach(tab => {
@@ -1791,9 +1809,6 @@ function openDriverDetailModal(driverNumber) {
   const raceResults = [];
   const sessions = DATA.recent_sessions || [];
   
-  console.log('Driver:', driverInfo.name, 'Number:', driverNumber);
-  console.log('Total sessions:', sessions.length);
-  
   // Group sessions by grand prix
   const raceMap = new Map();
   sessions.forEach(s => {
@@ -1820,7 +1835,6 @@ function openDriverDetailModal(driverNumber) {
       r.driver.toLowerCase() === driverNameLower
     );
     if (result) {
-      console.log('Found result for', driverInfo.name, 'in', s.grand_prix, s.session_type, '- Position:', result.position, 'Points:', result.points);
       const pos = result.position || (result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : '-')));
       if (s.session_type === 'qualifying') {
         race.quali = pos;
@@ -1836,7 +1850,6 @@ function openDriverDetailModal(driverNumber) {
   
   // Convert to array and sort by round descending
   const results = Array.from(raceMap.values()).sort((a, b) => b.round - a.round);
-  console.log('Final results:', results);
   
   // Store results for pagination
   driverResultsData = results;
