@@ -9,7 +9,7 @@ services:
     startCommand: uvicorn src.server:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.17
       - key: GOOGLE_SHEETS_ID
         sync: false
       - key: GOOGLE_SHEETS_CREDENTIALS_JSON
