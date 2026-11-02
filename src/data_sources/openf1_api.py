@@ -162,11 +162,13 @@ class OpenF1API:
             if num is None or num in seen:
                 continue
             seen.add(num)
+            # OpenF1 sends explicit nulls for some fields (e.g. team_name for a
+            # one-off reserve driver), so `or` rather than a .get() default.
             driver = Driver(
                 driver_number=num,
-                full_name=d.get("full_name", f"Driver #{num}"),
-                name_acronym=d.get("name_acronym", ""),
-                team_name=d.get("team_name", ""),
+                full_name=d.get("full_name") or f"Driver #{num}",
+                name_acronym=d.get("name_acronym") or "",
+                team_name=d.get("team_name") or "",
                 headshot_url=d.get("headshot_url"),
             )
             drivers.append(driver)
