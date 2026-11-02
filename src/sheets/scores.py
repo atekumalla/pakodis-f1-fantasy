@@ -18,6 +18,7 @@ from src.scoring.calculator import ScoringCalculator
 
 if TYPE_CHECKING:
     from src.sheets.client import SheetsClient
+    from src.substitutions import DriverSubstitution
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,10 @@ def write_leaderboard(
     players: list[DraftPlayer],
     sessions: list[Session],
     calculator: ScoringCalculator,
+    substitutions: list[DriverSubstitution] | None = None,
 ):
     """Calculate and write the leaderboard to Google Sheets."""
-    leaderboard = calculator.build_leaderboard(players, sessions)
+    leaderboard = calculator.build_leaderboard(players, sessions, substitutions)
 
     # Determine if H2 is active
     has_h2 = any(p.drivers_h2 for p in players)

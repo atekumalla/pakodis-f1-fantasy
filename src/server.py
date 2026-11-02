@@ -1185,7 +1185,7 @@ def _do_sync(state: dict):
         # Still update the leaderboard in case players changed
         if sheets_client and existing_sessions:
             try:
-                write_leaderboard(sheets_client, players, existing_sessions, calculator)
+                write_leaderboard(sheets_client, players, existing_sessions, calculator, state.get("substitutions"))
             except Exception as e:
                 logger.warning(f"Failed to update leaderboard: {e}")
         return
@@ -1208,7 +1208,7 @@ def _do_sync(state: dict):
     if sheets_client:
         try:
             write_results(sheets_client, all_sessions, calculator)
-            write_leaderboard(sheets_client, players, all_sessions, calculator)
+            write_leaderboard(sheets_client, players, all_sessions, calculator, state.get("substitutions"))
             logger.info(f"Wrote {len(all_sessions)} sessions to sheets")
         except Exception as e:
             logger.error(f"Failed to write to sheets: {e}")
@@ -1362,7 +1362,7 @@ def _do_force_sync(state: dict):
     if sheets_client:
         try:
             write_results(sheets_client, all_sessions, calculator)
-            write_leaderboard(sheets_client, players, all_sessions, calculator)
+            write_leaderboard(sheets_client, players, all_sessions, calculator, state.get("substitutions"))
             logger.info(f"Force sync: Wrote {len(all_sessions)} sessions to sheets")
         except Exception as e:
             logger.error(f"Force sync: Failed to write to sheets: {e}")
