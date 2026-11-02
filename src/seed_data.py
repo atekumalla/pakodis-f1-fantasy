@@ -115,7 +115,7 @@ DRIVERS_2026: list[dict] = [
     {"number": 31,  "name": "Esteban Ocon",         "team": "Haas",              "acronym": "OCO", "country": "FRA", "headshot_url": "https://media.formula1.com/content/dam/fom-website/drivers/E/ESTOCO01_Esteban_Ocon/estoco01.png.transform/1col/image.png"},
     {"number": 87,  "name": "Oliver Bearman",       "team": "Haas",              "acronym": "BEA", "country": "GBR", "headshot_url": "https://media.formula1.com/content/dam/fom-website/drivers/O/OLIBEA01_Oliver_Bearman/olibea01.png.transform/1col/image.png"},
     {"number": 27,  "name": "Nico Hulkenberg",      "team": "Audi",              "acronym": "HUL", "country": "GER", "headshot_url": "https://media.formula1.com/content/dam/fom-website/drivers/N/NICHUL01_Nico_Hulkenberg/nichul01.png.transform/1col/image.png"},
-    {"number": 50,  "name": "Gabriel Bortoleto",    "team": "Audi",              "acronym": "BOR", "country": "BRA", "headshot_url": "https://media.formula1.com/content/dam/fom-website/drivers/G/GABBOR01_Gabriel_Bortoleto/gabbor01.png.transform/1col/image.png"},
+    {"number": 5,   "name": "Gabriel Bortoleto",    "team": "Audi",              "acronym": "BOR", "country": "BRA", "headshot_url": "https://media.formula1.com/content/dam/fom-website/drivers/G/GABBOR01_Gabriel_Bortoleto/gabbor01.png.transform/1col/image.png"},
     {"number": 77,  "name": "Valtteri Bottas",      "team": "Cadillac",          "acronym": "BOT", "country": "FIN", "headshot_url": "https://media.formula1.com/content/dam/fom-website/drivers/V/VALBOT01_Valtteri_Bottas/valbot01.png.transform/1col/image.png"},
     {"number": 11,  "name": "Sergio Perez",         "team": "Cadillac",          "acronym": "PER", "country": "MEX", "headshot_url": "https://media.formula1.com/content/dam/fom-website/drivers/S/SERPER01_Sergio_Perez/serper01.png.transform/1col/image.png"},
 ]
@@ -123,6 +123,7 @@ DRIVERS_2026: list[dict] = [
 # Drivers not on the 2026 grid who may substitute for a race
 SUBSTITUTE_DRIVERS: list[dict] = [
     {"number": 22,  "name": "Yuki Tsunoda",         "team": "Red Bull Racing",   "acronym": "TSU", "country": "JPN", "headshot_url": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/Y/YUKTSU01_Yuki_Tsunoda/yuktsu01.png.transform/1col/image.png"},
+    {"number": 50,  "name": "Ryo Hirakawa",         "team": "Haas",              "acronym": "HIR", "country": "JPN", "headshot_url": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/R/RYOHIR01_Ryo_Hirakawa/ryohir01.png.transform/1col/image.png"},
 ]
 
 
