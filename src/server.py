@@ -31,6 +31,8 @@ from __future__ import annotations
 import logging
 import os
 import hmac
+import threading
+import time
 from contextlib import asynccontextmanager
 from datetime import date as dt_date, timedelta
 from pathlib import Path
@@ -40,7 +42,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from src.config import Config, HALFWAY_ROUND
-from src.models.session import Session, SessionStatus
+from src.models.session import Session, SessionStatus, SessionType
 from src.models.player import DraftPlayer
 from src.draft.manager import DraftStatus
 from src.scoring.calculator import ScoringCalculator
@@ -57,6 +59,11 @@ from src.utils.rate_limiter import rate_limiter
 logger = logging.getLogger(__name__)
 
 _app_state: dict = {}
+
+# Serialises every read-modify-write of _app_state["sessions"] + the Results
+# sheet: the scheduler thread, the Sync buttons and per-session refreshes
+# would otherwise overwrite each other's writes.
+_sessions_lock = threading.RLock()
 
 
 @asynccontextmanager
@@ -479,6 +486,59 @@ async def trigger_force_sync(x_admin_token: str | None = Header(default=None)):
     except Exception as e:
         logger.error(f"Force sync failed: {e}", exc_info=True)
         raise HTTPException(500, f"Force sync failed: {str(e)}")
+
+
+@app.post("/api/sessions/{round_number}/{session_type}/refresh")
+def refresh_session(round_number: int, session_type: str):
+    """Re-fetch one finished session and update it if OpenF1's results changed.
+
+    For corrections that land after the automatic re-check window (e.g. an
+    appeal days later). Costs ~3 OpenF1 calls; rate-limited per session with
+    the same cooldown as Sync. Defined with plain ``def`` so FastAPI runs it
+    in a worker thread instead of blocking the event loop on API throttling.
+    """
+    try:
+        st = SessionType(session_type.lower())
+    except ValueError:
+        raise HTTPException(400, f"Unknown session type '{session_type}'")
+
+    identity = (round_number, st.value)
+    if not any(
+        (s.round_number, s.session_type.value) == identity and s.is_finished
+        for s in _app_state.get("sessions", [])
+    ):
+        raise HTTPException(404, "No finished session found for that round and type.")
+
+    openf1 = _app_state.get("openf1_api")
+    if not openf1:
+        raise HTTPException(503, "OpenF1 API client not available")
+
+    limiter_key = f"refresh:{round_number}:{st.value}"
+    rate_limiter.set_cooldown(limiter_key, Config.SYNC_COOLDOWN_SECONDS)
+    allowed, wait = rate_limiter.try_call(limiter_key)
+    if not allowed:
+        raise HTTPException(429, f"Refreshed recently. Try again in {wait} seconds.")
+
+    try:
+        with _sessions_lock:
+            sessions = _app_state.get("sessions", [])
+            target = [s for s in sessions if (s.round_number, s.session_type.value) == identity]
+            corrected, fetched = _refetch_changed(openf1, target)
+            if identity not in fetched:
+                raise HTTPException(502, "OpenF1 returned no results for this session — try again later.")
+            if not corrected:
+                return {"status": "ok", "changed": False, "changes": [],
+                        "message": "Results already match OpenF1."}
+            changes = corrected[0][1]
+            _persist_sessions(_app_state, _apply_corrections(sessions, corrected))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Refresh of round {round_number} {st.value} failed: {e}", exc_info=True)
+        raise HTTPException(500, f"Refresh failed: {e}")
+
+    return {"status": "ok", "changed": True, "changes": changes,
+            "message": f"Updated {len(changes)} result(s)."}
 
 
 # ─── API: DRIVERS ────────────────────────────────────────────────────────────
@@ -1102,6 +1162,11 @@ def _calculate_worm_data(
 
 
 def _do_sync(state: dict):
+    with _sessions_lock:
+        _do_sync_locked(state)
+
+
+def _do_sync_locked(state: dict):
     """Execute a sync cycle - only fetch NEW sessions from API.
     
     Design:
@@ -1180,7 +1245,28 @@ def _do_sync(state: dict):
             state_mgr.record_error(str(e))
         return
 
-    if not new_sessions:
+    # Re-check recently finished sessions we already have, so post-race
+    # penalties / DSQs replace the provisional results.
+    corrected: list[tuple[Session, list[str]]] = []
+    last_recheck = state.get("last_recheck_at", 0.0)
+    if time.time() - last_recheck >= Config.SYNC_RECHECK_INTERVAL_MINUTES * 60:
+        cutoff = dt_date.today() - timedelta(days=Config.SYNC_RECHECK_DAYS)
+        new_identities = {(s.round_number, s.session_type.value) for s in new_sessions}
+        recent = [
+            s for s in existing_sessions
+            if s.is_finished and s.results and s.session_date >= cutoff
+            and (s.round_number, s.session_type.value) not in new_identities
+        ]
+        if recent:
+            try:
+                corrected, _ = _refetch_changed(openf1, recent)
+            except Exception as e:
+                logger.warning(f"Re-check of recent sessions failed: {e}")
+        state["last_recheck_at"] = time.time()
+    if corrected:
+        existing_sessions = _apply_corrections(existing_sessions, corrected)
+
+    if not new_sessions and not corrected:
         logger.info("No new sessions to sync")
         # Still update the leaderboard in case players changed
         if sheets_client and existing_sessions:
@@ -1223,8 +1309,97 @@ def _do_sync(state: dict):
     # Refresh cached session times for upcoming races (piggybacks on sync)
     _refresh_session_times(state)
 
-    logger.info(f"Sync completed: {len(new_sessions)} new sessions, "
+    logger.info(f"Sync completed: {len(new_sessions)} new sessions, {len(corrected)} corrected, "
                 f"{len(all_sessions)} total tracked")
+
+
+def _result_label(r) -> str:
+    if r.dsq:
+        return "DSQ"
+    if r.dns:
+        return "DNS"
+    if r.dnf:
+        return "DNF"
+    return f"P{r.position}" if r.position else "—"
+
+
+def _diff_results(old: list, new: list) -> list[str]:
+    """Human-readable differences between two result lists, e.g. 'Charles LECLERC P7→P8'.
+
+    Drivers are matched by number (falling back to name for sheet rows that
+    lack one); only position and DNF/DNS/DSQ status are compared.
+    """
+    from src.scoring.calculator import normalize_driver_name
+
+    def key(r):
+        return r.driver_number or normalize_driver_name(r.driver_name)
+
+    old_by = {key(r): r for r in old}
+    new_by = {key(r): r for r in new}
+    changes = []
+    for k, n in new_by.items():
+        o = old_by.get(k)
+        if o is None:
+            changes.append(f"{n.driver_name} added ({_result_label(n)})")
+        elif _result_label(o) != _result_label(n):
+            changes.append(f"{n.driver_name} {_result_label(o)}→{_result_label(n)}")
+    for k, o in old_by.items():
+        if k not in new_by:
+            changes.append(f"{o.driver_name} removed")
+    return changes
+
+
+def _refetch_changed(
+    openf1, sessions: list[Session]
+) -> tuple[list[tuple[Session, list[str]]], set[tuple[int, str]]]:
+    """Re-fetch ``sessions`` from OpenF1 and return those whose results changed.
+
+    Returns ``(corrected, fetched)``: ``corrected`` pairs a copy of each
+    changed session (original metadata, new results) with its change list;
+    ``fetched`` is the identities OpenF1 actually returned results for. An
+    empty API response never replaces stored results.
+    """
+    by_identity = {(s.round_number, s.session_type.value): s for s in sessions}
+    fresh = openf1.refetch_sessions(set(by_identity))
+    corrected = []
+    fetched = set()
+    for f in fresh:
+        identity = (f.round_number, f.session_type.value)
+        old = by_identity.get(identity)
+        if old is None or not f.results:
+            continue
+        fetched.add(identity)
+        changes = _diff_results(old.results, f.results)
+        if changes:
+            logger.info(
+                f"Results changed for round {old.round_number} {old.session_name} "
+                f"({old.grand_prix}): {'; '.join(changes)}"
+            )
+            corrected.append((old.model_copy(update={"results": f.results}), changes))
+    return corrected, fetched
+
+
+def _apply_corrections(
+    sessions: list[Session], corrected: list[tuple[Session, list[str]]]
+) -> list[Session]:
+    """Return ``sessions`` with each corrected session swapped in by (round, type)."""
+    replace = {(s.round_number, s.session_type.value): s for s, _ in corrected}
+    return [replace.get((s.round_number, s.session_type.value), s) for s in sessions]
+
+
+def _persist_sessions(state: dict, sessions: list[Session]):
+    """Store ``sessions`` in memory and overwrite the Results + Leaderboard tabs."""
+    from src.sheets.results import write_results
+    from src.sheets.scores import write_leaderboard
+
+    state["sessions"] = sessions
+    sheets_client = state.get("sheets_client")
+    if sheets_client:
+        write_results(sheets_client, sessions, state.get("calculator"))
+        write_leaderboard(
+            sheets_client, state.get("players", []), sessions,
+            state.get("calculator"), state.get("substitutions"),
+        )
 
 
 def _refresh_session_times(state: dict):
@@ -1325,6 +1500,11 @@ def _refresh_session_times(state: dict):
 
 
 def _do_force_sync(state: dict):
+    with _sessions_lock:
+        _do_force_sync_locked(state)
+
+
+def _do_force_sync_locked(state: dict):
     """Execute a FULL sync - re-fetch all sessions from API.
     
     Use this for recovery when sheets data is corrupted or missing.

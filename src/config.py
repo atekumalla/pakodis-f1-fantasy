@@ -47,6 +47,11 @@ class Config:
     SYNC_INTERVAL_MINUTES: int = int(os.getenv("SYNC_INTERVAL_MINUTES", "60"))
     SYNC_LIVE_INTERVAL_SECONDS: int = int(os.getenv("SYNC_LIVE_INTERVAL_SECONDS", "120"))
     SYNC_TIMEZONE: str = os.getenv("SYNC_TIMEZONE", "Asia/Kolkata")
+    # Each sync also re-fetches sessions that finished within this many days,
+    # so post-race penalties / DSQs replace the results first recorded.
+    SYNC_RECHECK_DAYS: int = int(os.getenv("SYNC_RECHECK_DAYS", "3"))
+    # Minimum gap between those re-checks (live-session syncs run every ~2 min).
+    SYNC_RECHECK_INTERVAL_MINUTES: int = int(os.getenv("SYNC_RECHECK_INTERVAL_MINUTES", "30"))
 
     # --- State ---
     STATE_FILE: str = os.getenv(

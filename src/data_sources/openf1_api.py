@@ -4,7 +4,10 @@ Endpoints used (https://api.openf1.org/v1/):
   GET /meetings?year=YYYY         — All GP weekends in a season
   GET /sessions?meeting_key=X     — Sessions for a GP weekend
   GET /drivers?session_key=X      — Driver info for a session
-  GET /position?session_key=X     — Position data (used for results)
+  GET /session_result?session_key=X — Official classification (used for results;
+                                      includes post-race penalties, DNF/DNS/DSQ)
+  GET /position?session_key=X     — Live position feed (fallback while the
+                                      classification isn't published yet)
 
 Free tier: 3 req/s, 30 req/min. No authentication needed.
 """
@@ -179,9 +182,58 @@ class OpenF1API:
         """Fetch position data for a session."""
         return self._get("position", {"session_key": session_key})
 
+    def fetch_session_result(self, session_key: int) -> list[dict]:
+        """Fetch the official classification for a session."""
+        return self._get("session_result", {"session_key": session_key})
+
     def get_session_results(self, session_key: int) -> list[SessionResult]:
+        """Final results for a session.
+
+        Prefers the official classification (``/session_result``), which
+        reflects stewards' penalties applied after the chequered flag and
+        carries real DNF/DNS/DSQ flags. Falls back to the live position feed
+        when the classification hasn't been published yet (it can lag the end
+        of the session briefly).
         """
-        Derive final results from position data.
+        try:
+            classification = self.fetch_session_result(session_key)
+        except Exception as e:
+            logger.warning(f"Failed to fetch classification for session {session_key}: {e}")
+            classification = []
+
+        if any(c.get("position") is not None for c in classification):
+            if not self._driver_cache:
+                try:
+                    self.fetch_drivers(session_key)
+                except Exception as e:
+                    logger.warning(f"Failed to fetch drivers for session {session_key}: {e}")
+            results = []
+            seen = set()
+            for c in classification:
+                num = c.get("driver_number")
+                if num is None or num in seen:
+                    continue
+                seen.add(num)
+                results.append(SessionResult(
+                    driver_number=num,
+                    driver_name=self.get_driver_name(num),
+                    position=c.get("position"),
+                    dnf=bool(c.get("dnf")),
+                    dns=bool(c.get("dns")),
+                    dsq=bool(c.get("dsq")),
+                ))
+            results.sort(key=lambda r: r.position if r.position else 99)
+            return results
+
+        logger.info(
+            f"No classification yet for session {session_key} — "
+            "falling back to live position feed"
+        )
+        return self._results_from_positions(session_key)
+
+    def _results_from_positions(self, session_key: int) -> list[SessionResult]:
+        """
+        Derive provisional results from position data.
 
         Strategy: for each driver, take their last recorded position entry
         (the most recent timestamp) as their finishing position.
@@ -491,6 +543,86 @@ class OpenF1API:
 
         logger.info(f"Found {len(new_sessions)} new sessions to sync")
         return new_sessions
+
+    def refetch_sessions(
+        self,
+        identities: set[tuple[int, str]],
+        year: int | None = None,
+    ) -> list[Session]:
+        """Re-fetch specific finished sessions by ``(round_number, session_type)``.
+
+        Used to pick up results that changed after they were first recorded
+        (post-race penalties, DSQs). Round numbers are counted the same way as
+        in ``fetch_new_sessions`` (cancelled meetings skipped), and only the
+        meetings that contain a requested session are queried.
+        """
+        if not identities:
+            return []
+        year = year or Config.F1_SEASON_YEAR
+        wanted_rounds = {rn for rn, _ in identities}
+        meetings = self.fetch_season_meetings(year)
+
+        sessions: list[Session] = []
+        round_number = 0
+        for meeting in meetings:
+            meeting_key = meeting.get("meeting_key")
+            if not meeting_key or meeting.get("is_cancelled", False):
+                continue
+            round_number += 1
+            if round_number not in wanted_rounds:
+                continue
+
+            gp_name = meeting.get("meeting_name", "GP")
+            try:
+                raw_sessions = self.fetch_sessions(meeting_key)
+            except Exception as e:
+                logger.warning(f"Failed to fetch sessions for {gp_name}: {e}")
+                continue
+
+            for raw in raw_sessions:
+                session_name = raw.get("session_name", "")
+                session_type = SESSION_TYPE_MAP.get(session_name)
+                session_key = raw.get("session_key")
+                if session_type is None or not session_key:
+                    continue
+                if (round_number, session_type.value) not in identities:
+                    continue
+                status = self._determine_status(
+                    raw.get("date_start", ""), raw.get("date_end", "")
+                )
+                if status != SessionStatus.FINISHED:
+                    continue
+
+                session_date = date.today()
+                if raw.get("date_start"):
+                    try:
+                        session_date = datetime.fromisoformat(
+                            raw["date_start"].replace("Z", "+00:00")
+                        ).date()
+                    except (ValueError, TypeError):
+                        pass
+
+                try:
+                    self.fetch_drivers(session_key)
+                    results = self.get_session_results(session_key)
+                except Exception as e:
+                    logger.warning(f"Failed to re-fetch {gp_name} {session_name}: {e}")
+                    continue
+
+                sessions.append(Session(
+                    session_key=session_key,
+                    meeting_key=meeting_key,
+                    session_type=session_type,
+                    session_name=session_name,
+                    grand_prix=gp_name,
+                    round_number=round_number,
+                    circuit=meeting.get("circuit_short_name", ""),
+                    country=meeting.get("country_name", ""),
+                    session_date=session_date,
+                    status=status,
+                    results=results,
+                ))
+        return sessions
 
     def fetch_race_calendar(
         self, year: int | None = None, include_cancelled: bool = True
