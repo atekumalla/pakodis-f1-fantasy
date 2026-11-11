@@ -7,6 +7,8 @@ from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
 
+from src.models.driver import Driver
+
 
 class SessionType(str, Enum):
     QUALIFYING = "qualifying"
@@ -52,6 +54,10 @@ class Session(BaseModel):
     session_date: _date = Field(default_factory=_date.today)
     status: SessionStatus = SessionStatus.SCHEDULED
     results: list[SessionResult] = Field(default_factory=list)
+    # Who took part, from OpenF1 /drivers (team + profile data). Only set on
+    # sessions fetched from the API this process; used for substitution
+    # detection, never persisted.
+    entrants: list[Driver] = Field(default_factory=list, exclude=True)
 
     @property
     def is_finished(self) -> bool:

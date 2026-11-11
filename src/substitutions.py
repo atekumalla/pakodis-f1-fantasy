@@ -14,6 +14,10 @@ class DriverSubstitution:
     rounds: list[int] = field(default_factory=list)
     reason: str = ""
     active: bool = True
+    # "auto": kept in sync with OpenF1 entry lists by src/sub_detection.py.
+    # "manual": a league ruling — auto-detection never edits it, and skips
+    # any round it lists for its original driver.
+    source: str = "auto"
 
 
 # Code-side defaults (sheet tab is the source of truth; these are fallback)

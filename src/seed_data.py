@@ -127,6 +127,24 @@ SUBSTITUTE_DRIVERS: list[dict] = [
 ]
 
 
+def is_known_driver(name: str) -> bool:
+    """Whether ``name`` has a profile (roster, substitute, or registered extra)."""
+    from src.scoring.calculator import normalize_driver_name
+    n = normalize_driver_name(name)
+    return any(normalize_driver_name(d["name"]) == n for d in DRIVERS_2026 + SUBSTITUTE_DRIVERS)
+
+
+def register_extra_drivers(drivers: list[dict]) -> list[dict]:
+    """Add profiles to SUBSTITUTE_DRIVERS in place, skipping known names.
+
+    In place so every module that imported the list sees new drivers.
+    Returns the ones actually added.
+    """
+    added = [d for d in drivers if not is_known_driver(d["name"])]
+    SUBSTITUTE_DRIVERS.extend(added)
+    return added
+
+
 def get_all_drivers_including_subs() -> list[dict]:
     """Return all grid drivers plus substitute drivers."""
     return DRIVERS_2026 + SUBSTITUTE_DRIVERS

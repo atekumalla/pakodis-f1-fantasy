@@ -173,6 +173,7 @@ class OpenF1API:
                 name_acronym=d.get("name_acronym") or "",
                 team_name=d.get("team_name") or "",
                 headshot_url=d.get("headshot_url"),
+                country_code=d.get("country_code"),
             )
             drivers.append(driver)
             self._driver_cache[num] = driver
@@ -360,12 +361,13 @@ class OpenF1API:
                 # Fetch results if session is finished
                 # Empty results = 0 points for all drivers (handles canceled sessions)
                 results = []
+                entrants: list[Driver] = []
                 if status == SessionStatus.FINISHED:
                     try:
                         # Refresh driver cache every session — a driver missing from
                         # an earlier weekend (e.g. mid-season replacement) would
                         # otherwise never get added, and fall back to "Driver #N".
-                        self.fetch_drivers(session_key)
+                        entrants = self.fetch_drivers(session_key)
                         results = self.get_session_results(session_key)
                         if not results:
                             logger.info(
@@ -390,6 +392,7 @@ class OpenF1API:
                     session_date=session_date,
                     status=status,
                     results=results,
+                    entrants=entrants,
                 )
                 all_sessions.append(session)
 
@@ -510,11 +513,12 @@ class OpenF1API:
 
                 # Fetch results
                 results = []
+                entrants: list[Driver] = []
                 try:
                     # Refresh driver cache every session — a driver missing from
                     # an earlier weekend (e.g. mid-season replacement) would
                     # otherwise never get added, and fall back to "Driver #N".
-                    self.fetch_drivers(session_key)
+                    entrants = self.fetch_drivers(session_key)
                     results = self.get_session_results(session_key)
                 except Exception as e:
                     logger.warning(f"Failed to fetch results for {gp_name} {session_name}: {e}")
@@ -537,6 +541,7 @@ class OpenF1API:
                     session_date=session_date,
                     status=status,
                     results=results,
+                    entrants=entrants,
                 )
                 new_sessions.append(session)
                 logger.info(f"Found new session: {gp_name} {session_name}")
@@ -603,7 +608,7 @@ class OpenF1API:
                         pass
 
                 try:
-                    self.fetch_drivers(session_key)
+                    entrants = self.fetch_drivers(session_key)
                     results = self.get_session_results(session_key)
                 except Exception as e:
                     logger.warning(f"Failed to re-fetch {gp_name} {session_name}: {e}")
@@ -621,6 +626,7 @@ class OpenF1API:
                     session_date=session_date,
                     status=status,
                     results=results,
+                    entrants=entrants,
                 ))
         return sessions
 

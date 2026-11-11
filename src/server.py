@@ -126,6 +126,12 @@ async def lifespan(app: FastAPI):
             # Load substitutions (sheet is source of truth, code defaults as fallback)
             state["substitutions"] = read_substitutions(state["sheets_client"])
 
+            # Auto-created driver profiles (substitutes not in seed_data)
+            from src.sheets.extra_drivers import read_extra_drivers
+            from src.seed_data import register_extra_drivers
+            state["extra_drivers"] = read_extra_drivers(state["sheets_client"])
+            register_extra_drivers(state["extra_drivers"])
+
             # Durable draft persistence (survives Render redeploys/restarts).
             draft_backend = SheetsDraftBackend(state["sheets_client"])
             
@@ -391,6 +397,10 @@ async def get_status():
         "force_sync_available": force_sync_ready,
         "force_sync_wait_seconds": force_sync_wait,
         "substitutions": sub_info_list,
+        "substitution_issues": [
+            {"round": rnd, "messages": msgs}
+            for rnd, msgs in sorted((_app_state.get("substitution_issues") or {}).items())
+        ],
         "spreadsheet_url": (
             f"https://docs.google.com/spreadsheets/d/{Config.GOOGLE_SHEETS_ID}"
             if Config.GOOGLE_SHEETS_ID else None
@@ -451,6 +461,10 @@ async def reload_from_sheets(x_admin_token: str | None = Header(default=None)):
         substitutions = read_substitutions(sheets_client)
         _app_state["sessions"] = sessions
         _app_state["substitutions"] = substitutions
+        from src.sheets.extra_drivers import read_extra_drivers
+        from src.seed_data import register_extra_drivers
+        _app_state["extra_drivers"] = read_extra_drivers(sheets_client)
+        register_extra_drivers(_app_state["extra_drivers"])
         logger.info(
             f"Reloaded {len(sessions)} sessions and {len(substitutions)} "
             "substitutions from sheets"
@@ -492,6 +506,8 @@ async def trigger_force_sync(x_admin_token: str | None = Header(default=None)):
 def refresh_session(round_number: int, session_type: str):
     """Re-fetch one finished session and update it if OpenF1's results changed.
 
+    Also re-runs substitution detection on the session's entry list.
+
     For corrections that land after the automatic re-check window (e.g. an
     appeal days later). Costs ~3 OpenF1 calls; rate-limited per session with
     the same cooldown as Sync. Defined with plain ``def`` so FastAPI runs it
@@ -524,12 +540,13 @@ def refresh_session(round_number: int, session_type: str):
             sessions = _app_state.get("sessions", [])
             target = [s for s in sessions if (s.round_number, s.session_type.value) == identity]
             corrected, fetched = _refetch_changed(openf1, target)
-            if identity not in fetched:
+            if not fetched:
                 raise HTTPException(502, "OpenF1 returned no results for this session — try again later.")
-            if not corrected:
+            changes = corrected[0][1] if corrected else []
+            changes += _detect_substitutions(_app_state, fetched)
+            if not changes:
                 return {"status": "ok", "changed": False, "changes": [],
                         "message": "Results already match OpenF1."}
-            changes = corrected[0][1]
             _persist_sessions(_app_state, _apply_corrections(sessions, corrected))
     except HTTPException:
         raise
@@ -538,7 +555,7 @@ def refresh_session(round_number: int, session_type: str):
         raise HTTPException(500, f"Refresh failed: {e}")
 
     return {"status": "ok", "changed": True, "changes": changes,
-            "message": f"Updated {len(changes)} result(s)."}
+            "message": f"{len(changes)} change(s) applied."}
 
 
 # ─── API: DRIVERS ────────────────────────────────────────────────────────────
@@ -1248,6 +1265,7 @@ def _do_sync_locked(state: dict):
     # Re-check recently finished sessions we already have, so post-race
     # penalties / DSQs replace the provisional results.
     corrected: list[tuple[Session, list[str]]] = []
+    rechecked: list[Session] = []
     last_recheck = state.get("last_recheck_at", 0.0)
     if time.time() - last_recheck >= Config.SYNC_RECHECK_INTERVAL_MINUTES * 60:
         cutoff = dt_date.today() - timedelta(days=Config.SYNC_RECHECK_DAYS)
@@ -1259,14 +1277,20 @@ def _do_sync_locked(state: dict):
         ]
         if recent:
             try:
-                corrected, _ = _refetch_changed(openf1, recent)
+                corrected, rechecked = _refetch_changed(openf1, recent)
             except Exception as e:
                 logger.warning(f"Re-check of recent sessions failed: {e}")
         state["last_recheck_at"] = time.time()
     if corrected:
         existing_sessions = _apply_corrections(existing_sessions, corrected)
 
-    if not new_sessions and not corrected:
+    sub_changes: list[str] = []
+    try:
+        sub_changes = _detect_substitutions(state, new_sessions + rechecked)
+    except Exception as e:
+        logger.warning(f"Substitution detection failed: {e}", exc_info=True)
+
+    if not new_sessions and not corrected and not sub_changes:
         logger.info("No new sessions to sync")
         # Still update the leaderboard in case players changed
         if sheets_client and existing_sessions:
@@ -1351,24 +1375,25 @@ def _diff_results(old: list, new: list) -> list[str]:
 
 def _refetch_changed(
     openf1, sessions: list[Session]
-) -> tuple[list[tuple[Session, list[str]]], set[tuple[int, str]]]:
+) -> tuple[list[tuple[Session, list[str]]], list[Session]]:
     """Re-fetch ``sessions`` from OpenF1 and return those whose results changed.
 
     Returns ``(corrected, fetched)``: ``corrected`` pairs a copy of each
     changed session (original metadata, new results) with its change list;
-    ``fetched`` is the identities OpenF1 actually returned results for. An
-    empty API response never replaces stored results.
+    ``fetched`` is the fresh API sessions that came back with results (they
+    carry entry lists for substitution detection). An empty API response
+    never replaces stored results.
     """
     by_identity = {(s.round_number, s.session_type.value): s for s in sessions}
     fresh = openf1.refetch_sessions(set(by_identity))
     corrected = []
-    fetched = set()
+    fetched = []
     for f in fresh:
         identity = (f.round_number, f.session_type.value)
         old = by_identity.get(identity)
         if old is None or not f.results:
             continue
-        fetched.add(identity)
+        fetched.append(f)
         changes = _diff_results(old.results, f.results)
         if changes:
             logger.info(
@@ -1377,6 +1402,76 @@ def _refetch_changed(
             )
             corrected.append((old.model_copy(update={"results": f.results}), changes))
     return corrected, fetched
+
+
+def _detect_substitutions(state: dict, sessions: list[Session]) -> list[str]:
+    """Update substitutions (and driver profiles) from API sessions' entry lists.
+
+    Only sessions fetched from OpenF1 in this process carry ``entrants``;
+    rounds without any are left alone. Writes the Substitutions / Extra
+    Drivers tabs when they change and returns human-readable changes.
+    Rounds where a newcomer can't be placed are recorded in
+    ``state["substitution_issues"]`` and not changed.
+    """
+    from src.scoring.calculator import normalize_driver_name as norm
+    from src.seed_data import DRIVERS_2026, is_known_driver, register_extra_drivers
+    from src.sub_detection import apply_round, detect_session, make_profile
+
+    by_round: dict[int, list[Session]] = {}
+    for s in sessions:
+        if s.entrants and s.is_finished:
+            by_round.setdefault(s.round_number, []).append(s)
+    if not by_round:
+        return []
+
+    subs = list(state.get("substitutions") or [])
+    issues: dict[int, list[str]] = dict(state.get("substitution_issues") or {})
+    changes: list[str] = []
+    new_profiles: list[dict] = []
+
+    for rnd, round_sessions in sorted(by_round.items()):
+        detections = {}
+        round_issues = []
+        for s in round_sessions:
+            found, problems = detect_session(s.entrants, DRIVERS_2026)
+            for d in found:
+                detections[(norm(d.original_driver), norm(d.substitute.full_name))] = d
+            round_issues += [f"{s.grand_prix} {s.session_name}: {p}" for p in problems]
+        if round_issues:
+            issues[rnd] = round_issues
+            logger.warning(f"Substitution detection needs review: {round_issues}")
+            continue
+        issues.pop(rnd, None)
+
+        subs, round_changes = apply_round(
+            subs, rnd, list(detections.values()), round_sessions[0].grand_prix
+        )
+        changes += round_changes
+        for d in detections.values():
+            profile = make_profile(d)
+            if not is_known_driver(profile["name"]) and all(
+                p["name"] != profile["name"] for p in new_profiles
+            ):
+                new_profiles.append(profile)
+
+    state["substitution_issues"] = issues
+    sheets_client = state.get("sheets_client")
+
+    if new_profiles:
+        register_extra_drivers(new_profiles)
+        state["extra_drivers"] = list(state.get("extra_drivers") or []) + new_profiles
+        changes += [f"New driver profile: {p['name']} ({p['team']})" for p in new_profiles]
+        if sheets_client:
+            from src.sheets.extra_drivers import write_extra_drivers
+            write_extra_drivers(sheets_client, state["extra_drivers"])
+
+    if changes:
+        state["substitutions"] = subs
+        if sheets_client:
+            from src.sheets.substitutions import write_substitutions
+            write_substitutions(sheets_client, subs)
+        logger.info(f"Substitution detection: {'; '.join(changes)}")
+    return changes
 
 
 def _apply_corrections(
@@ -1534,6 +1629,25 @@ def _do_force_sync_locked(state: dict):
         if state_mgr:
             state_mgr.record_error(str(e))
         return
+
+    # Never let an empty API response wipe results we already have.
+    previous = {
+        (s.round_number, s.session_type.value): s
+        for s in state.get("sessions", []) if s.results
+    }
+    kept = 0
+    for i, s in enumerate(all_sessions):
+        old = previous.get((s.round_number, s.session_type.value))
+        if not s.results and old is not None:
+            all_sessions[i] = old
+            kept += 1
+    if kept:
+        logger.warning(f"Force sync: kept stored results for {kept} session(s) the API returned empty")
+
+    try:
+        _detect_substitutions(state, all_sessions)
+    except Exception as e:
+        logger.warning(f"Force sync: substitution detection failed: {e}", exc_info=True)
 
     # Update in-memory state
     state["sessions"] = all_sessions

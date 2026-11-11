@@ -39,12 +39,14 @@ def read_substitutions(client: SheetsClient) -> list[DriverSubstitution]:
         reason = row[3].strip() if len(row) > 3 else ""
         active_str = row[4].strip().upper() if len(row) > 4 else "TRUE"
         active = active_str not in ("FALSE", "0", "NO")
+        source_str = row[5].strip().lower() if len(row) > 5 else ""
         subs.append(DriverSubstitution(
             original_driver=row[0].strip(),
             substitute_driver=row[1].strip(),
             rounds=rounds,
             reason=reason,
             active=active,
+            source="manual" if source_str == "manual" else "auto",
         ))
     logger.info(f"Loaded {len(subs)} substitutions from sheet")
     return subs
@@ -55,7 +57,7 @@ def write_substitutions(
     substitutions: list[DriverSubstitution],
 ) -> None:
     """Write substitutions to the sheet (creates tab if needed)."""
-    rows = [["Original Driver", "Substitute Driver", "Rounds", "Reason", "Active"]]
+    rows = [["Original Driver", "Substitute Driver", "Rounds", "Reason", "Active", "Source"]]
     for s in substitutions:
         rows.append([
             s.original_driver,
@@ -63,6 +65,7 @@ def write_substitutions(
             ", ".join(str(r) for r in s.rounds),
             s.reason,
             "TRUE" if s.active else "FALSE",
+            s.source,
         ])
     client.write_all_values(WORKSHEET_TITLE, rows)
     logger.info(f"Wrote {len(substitutions)} substitutions to sheet")

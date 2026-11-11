@@ -1160,7 +1160,12 @@ function renderRecent() {
   const endIdx = startIdx + RACES_PER_PAGE;
   const racesToShow = allRaces.slice(startIdx, endIdx);
 
-  el.innerHTML = racesToShow.map(race => {
+  // Substitutions auto-detection couldn't resolve — need a manual row in the sheet
+  const subIssuesHtml = (DATA.substitution_issues || []).map(i =>
+    `<div class="sub-banner">⚠️ Round ${i.round}: possible substitution needs review — ${i.messages.join('; ')}. Add it to the Substitutions tab with Source = manual.</div>`
+  ).join('');
+
+  el.innerHTML = subIssuesHtml + racesToShow.map(race => {
     // Calculate total points for all players across all sessions in this race
     const totalPlayerPoints = {};
     race.sessions.forEach(s => {

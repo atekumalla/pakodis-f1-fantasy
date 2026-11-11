@@ -14,6 +14,7 @@ class Driver(BaseModel):
     name_acronym: str           # e.g. "VER"
     team_name: str              # e.g. "Red Bull Racing"
     headshot_url: Optional[str] = None
+    country_code: Optional[str] = None
 
     def __hash__(self):
         return hash(self.driver_number)
